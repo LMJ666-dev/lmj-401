@@ -1,9 +1,9 @@
 ---
 name: web-project
-description: 项目技能。用于 24002120401-梁铭巨 的《高级网页设计》课堂实践项目 webProject_Bzy（index.html / review-flex.html / svg.html / css / font）。当需要了解、修改、重构或继续开发该网页项目，或需要在浏览器中预览页面、调整 CSS 布局（flex 布局、SVG 绘图、iconfont 字体图标）时使用。
+description: 项目技能。用于 24002120401-梁铭巨 的《高级网页设计》课堂实践项目（index.html / review-flex.html / svg.html / css / font）。当需要了解、修改、重构或继续开发该网页项目，或需要在浏览器中预览页面、调整 CSS 布局（flex 布局、SVG 绘图、iconfont 字体图标）时使用。
 ---
 
-# WebProject_Bzy 项目技能
+# 高级网页设计项目技能
 
 本项目是 **24002120401-梁铭巨** 的《高级网页设计》课堂实践作品，一个纯前端静态网站，无需构建步骤，直接用浏览器打开 HTML 文件即可预览。
 
