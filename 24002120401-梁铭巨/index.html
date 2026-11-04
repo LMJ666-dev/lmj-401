@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="梁铭巨的高级网页设计课堂实践目录">
+    <title>梁铭巨 · 高级网页设计课堂实践</title>
+    <style>
+        :root {
+            --ink: #17222d;
+            --ink-soft: #52616d;
+            --paper: #f5f1e8;
+            --paper-light: #fffdf8;
+            --orange: #dd6b38;
+            --orange-dark: #9d4025;
+            --teal: #1c7772;
+            --line: #d9d0c2;
+            --shadow: 0 20px 45px rgba(57, 43, 29, 0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background:
+                linear-gradient(135deg, rgba(221, 107, 56, 0.08) 25%, transparent 25%) 0 0 / 32px 32px,
+                var(--paper);
+        }
+
+        a { color: inherit; }
+
+        .page {
+            width: min(1180px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 28px 0 52px;
+        }
+
+        .topbar,
+        .hero,
+        .content,
+        .footer { background: var(--paper-light); }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 44px;
+            height: 44px;
+            place-items: center;
+            color: var(--paper-light);
+            background: var(--ink);
+            font-weight: 800;
+            font-size: 22px;
+            transform: rotate(-7deg);
+        }
+
+        .brand strong { display: block; font-size: 18px; }
+        .brand span { color: var(--ink-soft); font-size: 12px; letter-spacing: 1px; }
+
+        .top-link {
+            color: var(--orange-dark);
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+            gap: 38px;
+            padding: 66px 64px 60px;
+            box-shadow: var(--shadow);
+        }
+
+        .eyebrow {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--orange-dark);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 3px;
+        }
+
+        h1, h2, h3, p { margin-top: 0; }
+
+        h1 {
+            max-width: 720px;
+            margin-bottom: 22px;
+            font-size: clamp(38px, 6vw, 72px);
+            line-height: 1.08;
+            letter-spacing: 1px;
+        }
+
+        .hero-copy > p {
+            max-width: 620px;
+            margin-bottom: 30px;
+            color: var(--ink-soft);
+            font-size: 17px;
+            line-height: 1.9;
+        }
+
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 20px;
+            color: #fff;
+            background: var(--orange);
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 7px 7px 0 rgba(28, 119, 114, 0.22);
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .hero-action:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 rgba(28, 119, 114, 0.22); }
+
+        .hero-note {
+            align-self: end;
+            padding: 24px;
+            border: 1px solid var(--line);
+            border-top: 5px solid var(--teal);
+            background: #f0eadf;
+        }
+
+        .hero-note strong { display: block; margin-bottom: 14px; font-size: 14px; }
+        .hero-note p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.9; }
+
+        .content {
+            display: grid;
+            grid-template-columns: 220px minmax(0, 1fr);
+            gap: 46px;
+            padding: 46px 64px 54px;
+        }
+
+        .section-kicker { margin-bottom: 10px; color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: 2px; }
+        .content h2 { margin-bottom: 28px; font-size: 30px; }
+
+        .toc { position: sticky; top: 20px; align-self: start; }
+        .toc ol { margin: 0; padding: 0; list-style: none; counter-reset: toc; }
+        .toc li { counter-increment: toc; border-top: 1px solid var(--line); }
+        .toc a, .toc span { display: block; padding: 13px 0; color: var(--ink-soft); font-size: 14px; text-decoration: none; }
+        .toc a::before, .toc span::before { content: "0" counter(toc) "  "; color: var(--orange); font-weight: 800; }
+        .toc a:hover { color: var(--orange-dark); }
+        .toc span { opacity: 0.6; }
+
+        .module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+        .module {
+            min-height: 190px;
+            padding: 22px;
+            border: 1px solid var(--line);
+            background: #fffefa;
+            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+        }
+
+        .module:hover { transform: translateY(-5px); border-color: var(--orange); box-shadow: 0 12px 25px rgba(57, 43, 29, 0.1); }
+        .module-icon { color: var(--orange); font-size: 28px; font-weight: 900; }
+        .module h3 { margin: 30px 0 8px; font-size: 20px; }
+        .module p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.7; }
+        .module a { display: block; height: 100%; text-decoration: none; }
+        .module.pending { background: #f0eadf; }
+        .module.pending .module-icon { color: var(--teal); }
+
+        .prompt {
+            margin-top: 34px;
+            padding: 24px;
+            border-left: 5px solid var(--orange);
+            background: #f8f0e3;
+        }
+
+        .prompt h3 { margin-bottom: 12px; font-size: 18px; }
+        .prompt p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.9; }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 22px 64px;
+            border-top: 1px solid var(--line);
+            color: var(--ink-soft);
+            font-size: 12px;
+        }
+
+        .footer nav { display: flex; flex-wrap: wrap; gap: 18px; }
+        .footer a { color: var(--orange-dark); text-decoration: none; }
+
+        @media (max-width: 760px) {
+            .page { width: min(100% - 22px, 620px); padding-top: 11px; }
+            .topbar { padding: 15px 18px; }
+            .top-link { display: none; }
+            .hero, .content { grid-template-columns: 1fr; padding: 38px 24px; gap: 30px; }
+            h1 { font-size: clamp(38px, 12vw, 58px); }
+            .hero-note { align-self: auto; }
+            .toc { position: static; }
+            .module-grid { grid-template-columns: 1fr; }
+            .footer { flex-direction: column; padding: 22px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a class="brand" href="index.html">
+                <span class="brand-mark">S</span>
+                <span><strong>梁铭巨</strong><span>高级网页设计 · 课堂实践</span></span>
+            </a>
+            <a class="top-link" href="#modules">进入课堂目录 →</a>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div class="hero-copy">
+                    <span class="eyebrow">WEB DESIGN / PRACTICE 2026</span>
+                    <h1>梁铭巨的《高级网页设计》课堂实践</h1>
+                    <p>从页面结构到视觉表达，记录 HTML、CSS 与字体图标的课堂练习。这里是课程作品的入口，也是一份持续生长的学习目录。</p>
+                    <a class="hero-action" href="#modules">浏览课堂内容 <span aria-hidden="true">↘</span></a>
+                </div>
+                <aside class="hero-note">
+                    <strong>本页导航说明</strong>
+                    <p>首页集中收录当前目录下的所有网页入口。模块会随着课程实践继续增加，已经完成的内容可以直接打开查看。</p>
+                </aside>
+            </section>
+
+            <section class="content" id="modules">
+                <aside class="toc">
+                    <div class="section-kicker">CONTENTS</div>
+                    <h2>课堂目录</h2>
+                    <ol>
+                        <li><a href="review-flex.html">Flex 复习</a></li>
+                        <li><a href="svg.html">字体图标</a></li>
+                        <li><a href="font/demo_index.html">字体图标演示</a></li>
+                        <li><span>其余模块后续在增加</span></li>
+                    </ol>
+                </aside>
+
+                <div>
+                    <div class="section-kicker">OPEN MODULES</div>
+                    <h2>正在学习的内容</h2>
+                    <div class="module-grid">
+                        <article class="module">
+                            <a href="review-flex.html">
+                                <div class="module-icon">01</div>
+                                <h3>Flex 复习</h3>
+                                <p>导航布局、三等分布局、响应式卡片与侧边栏案例。</p>
+                            </a>
+                        </article>
+                        <article class="module">
+                            <a href="svg.html">
+                                <div class="module-icon">02</div>
+                                <h3>字体图标</h3>
+                                <p>通过 SVG symbol 完成图标导航与选项卡交互练习。</p>
+                            </a>
+                        </article>
+                        <article class="module">
+                            <a href="font/demo_index.html">
+                                <div class="module-icon">03</div>
+                                <h3>字体图标演示</h3>
+                                <p>查看 Unicode、font-class 与 Symbol 三种图标引用方式。</p>
+                            </a>
+                        </article>
+                        <article class="module pending">
+                            <div class="module-icon">＋</div>
+                            <h3>后续模块</h3>
+                            <p>其余模块后续在增加，课程实践持续更新中。</p>
+                        </article>
+                    </div>
+
+                    <section class="prompt" id="prompt">
+                        <h3>本提示词</h3>
+                        <p>创建一个新页面，包括本目录下的所有网页的超链接，使用原生代码，不使用cdn，新页面名称为index.html，主题为梁铭巨的《高级网页设计》课堂实践，美化页面，课堂目录中包含flex复习、字体图标、其余模块后续在增加。页面中包括本提示词。创建一个新页面，包括本目录下的所有网页的超链接，使用原生代码，不使用cdn，新页面名称为index.html，主题为梁铭巨的《高级网页设计》课堂实践，美化页面，课堂目录中包含flex复习、字体图标、其余模块后续在增加。页面中包括本提示词。</p>
+                    </section>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>梁铭巨 · 高级网页设计课堂实践</span>
+            <nav aria-label="页面导航">
+                <a href="index.html">首页</a>
+                <a href="review-flex.html">Flex 复习</a>
+                <a href="svg.html">字体图标</a>
+                <a href="font/demo_index.html">图标演示</a>
+            </nav>
+        </footer>
+    </div>
+</body>
+</html>

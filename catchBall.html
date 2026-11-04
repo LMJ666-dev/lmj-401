@@ -1,0 +1,25 @@
+<script>
+    const ball = document.getElementById('ball');
+    const scoreSpan = document.getElementById('score');
+    let score = 0;
+
+    // 小球随机位置
+    function moveBall(){
+        let w = window.innerWidth - 50;
+        let h = window.innerHeight - 50;
+        let x = Math.random() * w;
+        let y = Math.random() * h;
+        ball.style.position = 'absolute';
+        ball.style.left = x + 'px';
+        ball.style.top = y + 'px';
+    }
+
+    // 点击小球加分
+    ball.onclick = function(){
+        score++;
+        scoreSpan.innerText = score;
+        moveBall();
+    }
+
+    moveBall();
+</script>

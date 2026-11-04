@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻 Tab 选项卡</title>
+    <!--
+      作者：梁铭巨
+      建立时间：2026-11-04
+      使用大模型：GLM-5.3-Flash
+      功能名称：新闻 Tab 选项卡切换页（国内 / 省内 / 国际 / 最热新闻，默认选中"国内新闻"）
+    -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: #f5f6f7;
+            padding: 40px 16px;
+        }
+
+        .bzy_box {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .bzy_title {
+            padding: 20px 24px 0;
+            font-size: 22px;
+            color: #222;
+        }
+
+        /* 选项卡导航条 */
+        .bzy_tab_list {
+            display: flex;
+            list-style: none;
+            padding: 16px 24px 0;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .bzy_tab {
+            padding: 10px 22px;
+            margin-right: 8px;
+            font-size: 16px;
+            color: #555;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px; /* 盖住导航条的底线，形成选中下划线效果 */
+            transition: color 0.2s, background 0.2s;
+            user-select: none;
+        }
+
+        .bzy_tab:hover {
+            color: #d43c33;
+            background: #fdf3f2;
+        }
+
+        /* 选中状态：红字 + 红色下划线 */
+        .bzy_tab.bzy_active {
+            color: #d43c33;
+            font-weight: 700;
+            border-bottom-color: #d43c33;
+        }
+
+        /* 内容面板：默认隐藏，选中时显示 */
+        .bzy_panel {
+            display: none;
+            padding: 12px 24px 24px;
+        }
+
+        .bzy_panel.bzy_active {
+            display: block;
+        }
+
+        .bzy_news_list {
+            list-style: none;
+        }
+
+        .bzy_news_list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 4px;
+            border-bottom: 1px dashed #eee;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .bzy_news_list li:hover {
+            color: #d43c33;
+            cursor: pointer;
+        }
+
+        .bzy_news_date {
+            flex-shrink: 0;
+            font-size: 13px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <a id="bzy_homeLink" class="bzy_home_link" href="../index.html" style="position:fixed;top:12px;right:12px;z-index:9999;background:#345ca8;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.15);">← 返回首页</a>
+
+    <div class="bzy_box">
+        <h1 class="bzy_title">今日新闻</h1>
+
+        <!-- 选项卡组：data-bzy_tab 与内容面板的 data-bzy_panel 一一对应 -->
+        <div id="bzy_newsTabs">
+            <ul class="bzy_tab_list">
+                <li class="bzy_tab bzy_active" data-bzy_tab="domestic">国内新闻</li>
+                <li class="bzy_tab" data-bzy_tab="province">省内新闻</li>
+                <li class="bzy_tab" data-bzy_tab="world">国际新闻</li>
+                <li class="bzy_tab" data-bzy_tab="hot">最热新闻</li>
+            </ul>
+
+            <div class="bzy_panel bzy_active" data-bzy_panel="domestic">
+                <ul class="bzy_news_list">
+                    <li><span>全国秋粮收获进度超过九成，丰收已成定局</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>新版全国铁路列车运行图今日起实行</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>多部门联合部署冬季能源保供工作</span><span class="bzy_news_date">11-03</span></li>
+                    <li><span>全国污染治理攻坚行动取得阶段性成效</span><span class="bzy_news_date">11-03</span></li>
+                </ul>
+            </div>
+
+            <div class="bzy_panel" data-bzy_panel="province">
+                <ul class="bzy_news_list">
+                    <li><span>我省正式启动今冬供暖，覆盖全部地级城市</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>省科技厅发布新一轮高新技术企业扶持政策</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>全省高速公路服务区完成充电桩全覆盖</span><span class="bzy_news_date">11-02</span></li>
+                    <li><span>我省三名技能人才入选国家首批卓越工程师</span><span class="bzy_news_date">11-01</span></li>
+                </ul>
+            </div>
+
+            <div class="bzy_panel" data-bzy_panel="world">
+                <ul class="bzy_news_list">
+                    <li><span>联合国气候变化大会本周开幕，各国代表陆续抵达</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>国际油价小幅回落，市场关注产油国动向</span><span class="bzy_news_date">11-03</span></li>
+                    <li><span>多国央行相继公布最新利率决议</span><span class="bzy_news_date">11-02</span></li>
+                    <li><span>国际空间站完成新一轮宇航员轮换</span><span class="bzy_news_date">11-01</span></li>
+                </ul>
+            </div>
+
+            <div class="bzy_panel" data-bzy_panel="hot">
+                <ul class="bzy_news_list">
+                    <li><span>热搜第一： AI 大模型助力教育行业数字化转型</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>多地迎来今冬首场降雪，网友晒图刷屏朋友圈</span><span class="bzy_news_date">11-04</span></li>
+                    <li><span>全国马拉松赛季开启，多城赛事报名人数创新高</span><span class="bzy_news_date">11-03</span></li>
+                    <li><span>老字号国潮新品发售，年轻人排队打卡</span><span class="bzy_news_date">11-02</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- tab 逻辑单独放在 js 文件夹中，外部引用 -->
+    <script src="./js/tab_news.js"></script>
+</body>
+</html>
