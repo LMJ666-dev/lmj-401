@@ -28,6 +28,10 @@
   - iconfont-2.html：Lucide（SVG），配色雾白 + 石墨灰 + 青绿点缀，几何感现代布局，图标卡片矩阵
   - CDN 资源本地化：cdn/fontawesome/ 与 cdn/lucide/
 ---
+- **时间**: 2026-11-06
+- **模型**: Trae AI Assistant
+- **提示词**: 补全 swiper-task.html 底部 script 区域内 4 个 Swiper 初始化 TODO 和任务 4 进阶按钮点击切换 effect TODO
+---
 - **时间**: 2026-10-23
 - **模型**: Trae AI Assistant
 - **提示词**: 根据 font 目录中的 iconfont 图标完成移动端的固定的自适应宽度的下导航，导航项目包括 4 个，完成 html 网页的设计，网页名称 iconfont-3.html 和 iconfont-4.html 分别使用字体图标和 svg，包括右上角的数字徽章和红点。
