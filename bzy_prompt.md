@@ -97,3 +97,9 @@
 - **提示词**: 创建 tab 选项卡 HTML 页面：国内新闻（默认）、省内新闻、国际新闻、最热新闻；JS 放 js 文件夹外部引用；tab 选项卡 JS 可复用；监听事件先清除所有选中状态再设置当前元素选中状态。
 - **执行结果**: 新建 tab-news.html + js/tab-news.js（可复用 bzy_initTabs 组件，先清空后选中逻辑）
 ---
+- **时间**: 2026-11-11
+- **模型**: DeepSeek-V4.1-Flash
+- **提示词**: 按截图要求完成第三次课作业：任务一（两轮提示词 + 逐项验证 + 答辩记录）、任务二（新增 creative 电影墙第 7 个按钮与 creativeEffect）、任务三（AI 生成爱达·魔都号 16:9 图片并加入四个演示、增加 keyboard 键盘控制），把提示词入口接入首页与作业页，最后提交到 GitHub。
+- **执行结果**: 修改 swiper-task.html（初始 cube、6 件展品、7 个效果按钮、keyboard）；新建 swiper-homework.html 提示词与答辩记录页；24002120401-梁铭巨/index.html 增加两个入口；生成 swiper-imgs/aida_modu_1.jpg
+---
+

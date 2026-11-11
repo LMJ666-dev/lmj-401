@@ -1,0 +1,324 @@
+<!--
+  作者：梁铭巨
+  建立时间：2026-11-11
+  使用大模型：DeepSeek-V4.1-Flash
+  功能名称：Swiper 课堂作业 · 提示词迭代、creative 仿写与答辩记录页
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swiper 作业提交 · 提示词迭代 + creative 仿写 + 超纲创作</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:#f6f8fc;color:#1f2937}
+
+  .bzy_hw_wrap{max-width:1020px;margin:0 auto;padding:34px 20px 60px}
+  .bzy_hw_top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .bzy_hw_home{display:inline-block;text-decoration:none;color:#0f2b5b;font-size:14px;font-weight:bold;background:#fff;border:1px solid #dbe4ff;border-radius:999px;padding:9px 22px;transition:transform .2s,box-shadow .2s}
+  .bzy_hw_home:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,43,91,.15)}
+  .bzy_hw_goto{display:inline-block;text-decoration:none;color:#fff;font-size:14px;font-weight:bold;background:linear-gradient(135deg,#0f2b5b,#1d5bbf);border-radius:999px;padding:9px 22px}
+
+  .bzy_hw_head{background:linear-gradient(135deg,#0f2b5b,#1d5bbf);border-radius:20px;padding:34px 36px;color:#fff;box-shadow:0 12px 30px rgba(15,43,91,.28);margin-bottom:24px}
+  .bzy_hw_head .bzy_hw_badge{display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);font-size:13px;letter-spacing:2px;margin-bottom:14px}
+  .bzy_hw_head h1{font-size:28px;line-height:1.5}
+  .bzy_hw_head h1 b{color:#ffd166}
+  .bzy_hw_meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .bzy_hw_meta i{font-style:normal;font-size:13px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);padding:6px 13px;border-radius:8px}
+
+  .bzy_hw_sec{background:#fff;border-radius:18px;padding:26px 30px;margin-bottom:22px;border:1px solid #e8ecf5;box-shadow:0 4px 14px rgba(31,41,55,.06)}
+  .bzy_hw_sec > h2{font-size:20px;color:#111827;margin-bottom:6px}
+  .bzy_hw_sec > h2 span{font-size:13px;font-weight:normal;color:#9ca3af;margin-left:8px}
+  .bzy_hw_sec h3{font-size:15.5px;color:#0f2b5b;margin:20px 0 8px}
+  .bzy_hw_sec p{font-size:14.5px;line-height:2;color:#374151}
+  .bzy_hw_sec p + p{margin-top:8px}
+  .bzy_hw_sec li{font-size:14px;line-height:2;color:#374151;margin-left:20px}
+  .bzy_hw_sec code{background:#eef2ff;color:#1d4ed8;padding:1px 7px;border-radius:5px;font-family:Consolas,monospace;font-size:13px}
+  .bzy_hw_sec pre{background:#0f1b33;color:#d8e2f5;border-radius:12px;padding:16px 18px;overflow-x:auto;margin:10px 0 4px}
+  .bzy_hw_sec pre code{background:none;color:inherit;padding:0;font-size:13px;line-height:1.85}
+
+  .bzy_hw_tip{background:#fffbea;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;font-size:13.5px;color:#7c5e10;line-height:1.95;margin:12px 0}
+  .bzy_hw_ok{background:#f0fdf4;border:1.5px dashed #16a34a;border-radius:12px;padding:12px 16px;font-size:13.5px;color:#166534;line-height:1.95;margin:12px 0}
+
+  .bzy_hw_table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+  .bzy_hw_table th,.bzy_hw_table td{border:1px solid #e5eaf5;padding:9px 12px;text-align:left;line-height:1.8;vertical-align:top}
+  .bzy_hw_table th{background:#f3f7ff;color:#0f2b5b}
+  .bzy_hw_table td.yes{color:#15803d;font-weight:bold;white-space:nowrap}
+
+  .bzy_hw_live{max-width:640px;margin:14px auto 4px;border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(15,43,91,.16)}
+  .bzy_hw_live .swiper-slide{height:250px}
+  .bzy_hw_live img{width:100%;height:100%;object-fit:cover;display:block}
+  .bzy_hw_live .swiper-pagination-bullet{background:#0f2b5b;opacity:.35}
+  .bzy_hw_live .swiper-pagination-bullet-active{background:#e8890c;opacity:1;width:22px;border-radius:6px}
+
+  .bzy_hw_figure{max-width:640px;margin:12px auto}
+  .bzy_hw_figure img{width:100%;border-radius:14px;display:block;box-shadow:0 10px 24px rgba(15,43,91,.16)}
+  .bzy_hw_figure figcaption{text-align:center;font-size:12.5px;color:#9ca3af;margin-top:8px}
+
+  .bzy_hw_qa{border-left:4px solid #1d5bbf;background:#f8faff;border-radius:0 10px 10px 0;padding:12px 18px;margin:10px 0}
+  .bzy_hw_qa b{color:#0f2b5b;display:block;font-size:14px;margin-bottom:4px}
+  .bzy_hw_qa p{font-size:13.5px;line-height:1.95;color:#374151}
+
+  footer{text-align:center;margin-top:30px;color:#9ca3af;font-size:13px;line-height:2}
+</style>
+</head>
+<body>
+<div class="bzy_hw_wrap">
+
+  <div class="bzy_hw_top">
+    <a id="bzy_homeLink" class="bzy_hw_home" href="index.html">← 返回首页</a>
+    <a class="bzy_hw_goto" href="swiper-task.html">打开作业页面（现场验证）→</a>
+  </div>
+
+  <div class="bzy_hw_head">
+    <span class="bzy_hw_badge">高 级 网 页 设 计 · 第 三 次 课 作 业</span>
+    <h1>大国重器光影展 · <b>提示词工程 + creative 仿写 + 超纲创作</b></h1>
+    <div class="bzy_hw_meta">
+      <i>作者：梁铭巨</i>
+      <i>学号：24002120401</i>
+      <i>日期：2026-11-11</i>
+      <i>提交分支：feat/swiper-task</i>
+      <i>答案页：swiper-task.html</i>
+    </div>
+  </div>
+
+  <!-- 提交清单 -->
+  <div class="bzy_hw_sec">
+    <h2>提交清单<span>三个任务 + 提示词访问入口</span></h2>
+    <table class="bzy_hw_table">
+      <tr><th style="width:90px">任务</th><th>提交内容</th><th style="width:180px">访问位置</th></tr>
+      <tr><td>任务一</td><td>两轮提示词 + 两轮 AI 回答 + 逐项验证结论 + 答辩记录</td><td>本页第 1 节</td></tr>
+      <tr><td>任务二</td><td>第 7 个按钮「creative 电影墙」+ creativeEffect 参数 + prev/next 说明</td><td>本页第 2 节 / 作业页演示四</td></tr>
+      <tr><td>任务三</td><td>第六件展品「爱达·魔都号」（AI 生图 16:9）+ keyboard 键盘控制</td><td>本页第 3 节 / 作业页四个演示</td></tr>
+    </table>
+    <div class="bzy_hw_tip">提示词访问入口：作业页顶部橙色按钮「📝 本次作业：两轮提示词 + 逐项验证 + 答辩记录」→ 即本页；本页顶部也有「打开作业页面」按钮，可来回切换。</div>
+  </div>
+
+  <!-- 任务一 -->
+  <div class="bzy_hw_sec">
+    <h2>任务一 · 提示词工程师<span>把四条需求“翻译”给 AI</span></h2>
+    <p>目标：让 AI 生成 <code>new Swiper('#wySw4', {...})</code> 的初始化配置，覆盖四条需求。</p>
+
+    <h3>① 需求拆解（写提示词前的准备）</h3>
+    <table class="bzy_hw_table">
+      <tr><th style="width:46%">中文需求</th><th>对应 Swiper 参数</th></tr>
+      <tr><td>无缝循环，最后一张能接回第一张</td><td><code>loop: true</code></td></tr>
+      <tr><td>每 3.2 秒自动翻页，且用户手动滑动后不停止</td><td><code>autoplay: { delay: 3200, disableOnInteraction: false }</code></td></tr>
+      <tr><td>圆点分页器可点击跳转（页面里有 4 个分页器，必须指定本页唯一元素）</td><td><code>pagination: { el: '#wyPag4', clickable: true }</code></td></tr>
+      <tr><td>初始效果为 3D 立方体</td><td><code>effect: 'cube'</code>（可加 <code>cubeEffect</code> 微调）</td></tr>
+    </table>
+
+    <h3>② 第 1 轮提示词（粗略版）</h3>
+    <pre><code>帮我用 Swiper 11 写一段初始化代码，选择器是 #wySw4。
+要求：无缝循环、自动播放、有分页器，初始效果用 cube。请直接给完整代码。</code></pre>
+
+    <h3>③ 第 1 轮 AI 回答（有遗漏，已原样保留）</h3>
+    <pre><code>new Swiper('#wySw4', {
+  loop: true,
+  effect: 'cube',
+  autoplay: true,
+  pagination: { el: '.swiper-pagination' }
+});</code></pre>
+    <p><b>我验证后发现 4 个问题：</b></p>
+    <ul>
+      <li>① <code>autoplay: true</code> 实际间隔是默认 3000ms，不是要求的 3200ms；</li>
+      <li>② 没有写 <code>disableOnInteraction: false</code>，默认手动滑动后就停播，不符合“手动操作后不停止”；</li>
+      <li>③ 分页器写的是通用类 <code>.swiper-pagination</code>，页面有 4 个轮播会全部命中，必须写 <code>#wyPag4</code>；</li>
+      <li>④ 没有 <code>clickable: true</code>，圆点只能看不能点。</li>
+    </ul>
+
+    <h3>④ 第 2 轮提示词（把每个问题说清楚）</h3>
+    <pre><code>上一版有 4 个问题，请逐条修正后重新给出完整代码：
+1. autoplay 必须是 3200 毫秒，不是默认 3 秒；
+2. 用户手动滑动后自动播放不能停止，需要 disableOnInteraction: false；
+3. 页面里共有 4 个轮播，分页器必须精确绑定 #wyPag4，并且 clickable: true；
+4. effect 保持 cube。其他配置不要删。</code></pre>
+
+    <h3>⑤ 第 2 轮 AI 回答（最终版，已粘贴进作业页）</h3>
+    <pre><code>new Swiper('#wySw4', {
+  loop: true,
+  speed: 800,
+  effect: 'cube',
+  autoplay: {
+    delay: 3200,
+    disableOnInteraction: false
+  },
+  pagination: {
+    el: '#wyPag4',
+    clickable: true
+  },
+  cubeEffect: {
+    shadow: true,
+    slideShadows: true,
+    shadowOffset: 20,
+    shadowScale: 0.94
+  }
+});</code></pre>
+
+    <h3>⑥ 逐项验证（真实运行 + 一句话结论）</h3>
+    <table class="bzy_hw_table">
+      <tr><th style="width:22%">需求</th><th style="width:44%">验证操作</th><th>结论</th></tr>
+      <tr><td>无缝循环</td><td>翻到最后一张后继续下一张</td><td class="yes">✓ 通过：顺利回到第 1 张，没有空白页</td></tr>
+      <tr><td>3.2 秒自动翻页</td><td>不操作，用秒表看两次翻页间隔</td><td class="yes">✓ 通过：间隔约 3.2 秒</td></tr>
+      <tr><td>手动后不停</td><td>手动拖一张松手，再等 3.2 秒</td><td class="yes">✓ 通过：仍然自动翻到下一张</td></tr>
+      <tr><td>圆点可点</td><td>点击第 5 个圆点</td><td class="yes">✓ 通过：直接跳到第 5 张（爱达·魔都号）</td></tr>
+      <tr><td>初始 cube</td><td>刷新页面观察切换动画</td><td class="yes">✓ 通过：首屏即为 3D 立方体翻转</td></tr>
+    </table>
+    <p>下方为实时验证台（与作业页 #wySw4 相同的 cube + 3.2s + 可点圆点配置，可现场复现）：</p>
+    <div class="bzy_hw_live">
+      <div class="swiper" id="bzy_hw_verify">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide"><img src="swiper-imgs/tiangong_1.jpg" alt="天宫空间站"></div>
+          <div class="swiper-slide"><img src="swiper-imgs/c919_1.jpg" alt="C919大飞机"></div>
+          <div class="swiper-slide"><img src="swiper-imgs/aida_modu_1.jpg" alt="爱达·魔都号"></div>
+        </div>
+        <div class="swiper-pagination" id="bzy_hw_verify_pag"></div>
+      </div>
+    </div>
+
+    <h3>⑦ 答辩准备</h3>
+    <div class="bzy_hw_qa">
+      <b>问：第一版提示词漏掉了哪个需求？</b>
+      <p>严格说四条都写了，但写得不够具体：没写 3200ms、没写“手动滑动后不停”、分页器没指定唯一容器、也没要求圆点可点。模糊的“自动播放 / 有分页器”被 AI 按默认值实现了。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：第二轮是怎么“说清楚”的？</b>
+      <p>把每条需求换成可验证的量化条件：给出毫秒数 3200、给出参数名 disableOnInteraction: false、给出唯一选择器 #wyPag4 和 clickable: true，并要求“逐条修正、其他配置不要删”，避免 AI 自由发挥。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：AI 第一次给的代码错在哪？</b>
+      <p>① autoplay 用布尔值，间隔不可控；② 缺少手动交互后继续播放的配置；③ 分页器选择器太宽泛，4 个 Swiper 会抢同一个元素；④ 圆点不可点击。</p>
+    </div>
+  </div>
+
+  <!-- 任务二 -->
+  <div class="bzy_hw_sec">
+    <h2>任务二 · creative 仿写<span>第 7 种效果：电影胶片墙</span></h2>
+    <p>先打开官方示例 <code>swiper/demo/257-effect-creative.html</code>，其中第 3 个实例的写法最接近“侧向让位”的胶片墙：</p>
+    <pre><code>effect: 'creative',
+creativeEffect: {
+  prev: { shadow: true, translate: ['-20%', 0, -1] },
+  next: { translate: ['100%', 0, 0] }
+}</code></pre>
+
+    <h3>① 我改造后的电影墙参数</h3>
+    <pre><code>// 函数功能：为 creative 效果提供自定义参数，上一张缩小左移带角度，下一张放大从右侧进场
+creativeEffect: {
+  prev: {
+    shadow: true,
+    translate: ['-25%', 0, -120],   // 向左退 25% 宽度，Z 轴后移 120px
+    rotate: [0, 0, -12],            // 逆时针倾斜 12 度
+    scale: 0.82,                    // 缩小到 82%
+    opacity: 0.55                   // 变暗，像退到背景
+  },
+  next: {
+    shadow: true,
+    translate: ['100%', 0, 0],      // 从右侧一整屏外推进来
+    rotate: [0, 0, 12],             // 顺时针倾斜 12 度
+    scale: 1.12                     // 放大到 112%，有迎面感
+  }
+}</code></pre>
+    <p>作业页演示四的第 7 个按钮「creative 电影墙」即调用这组参数：点它，上一张会缩小、左移、倾斜并压暗，下一张从右侧放大推进，形成电影胶片墙的纵深。</p>
+
+    <h3>② prev / next 各控制什么（自己的话）</h3>
+    <table class="bzy_hw_table">
+      <tr><th style="width:12%">键</th><th>控制对象</th><th>效果</th></tr>
+      <tr><td><code>prev</code></td><td>当前幻灯片“之前的那一张”（也就是正被翻走的上一张）</td><td>它离场时的位移、旋转、缩放、透明度，表现为向后退到画面外</td></tr>
+      <tr><td><code>next</code></td><td>当前幻灯片“之后的那一张”（即将进场的新一张）</td><td>它进场时的位移、旋转、缩放，表现为从画面外推到正中</td></tr>
+    </table>
+
+    <h3>③ 答辩准备</h3>
+    <div class="bzy_hw_qa">
+      <b>问：transform 里的百分号是相对谁的？</b>
+      <p><code>translate</code> 的数组是 [x, y, z]。x 写百分比时，相对的是“幻灯片自身的宽度”；y 写百分比时，相对的是“幻灯片自身的高度”；z 只能写像素值，不是百分比。所以 <code>'-25%'</code> 表示向左移动自身宽度的 25%，不是容器的 25%。<code>rotate</code> 的三个值是角度（deg），不是百分比。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：改一个数值让卡片转 20 度，怎么改？</b>
+      <p>把 <code>prev.rotate</code> 的 <code>[0, 0, -12]</code> 改成 <code>[0, 0, -20]</code>（<code>next.rotate</code> 同步改成 <code>[0, 0, 20]</code>），Z 轴旋转就从 12 度变成 20 度；刷新或重建实例即可看到倾斜更明显。</p>
+    </div>
+  </div>
+
+  <!-- 任务三 -->
+  <div class="bzy_hw_sec">
+    <h2>任务三 · 综合创作<span>第六件展品 + keyboard 键盘控制</span></h2>
+
+    <h3>① 第六件展品：爱达·魔都号</h3>
+    <p>首艘国产大型邮轮，2024 年 1 月商业首航，全长 323.6 米，被称为中国造船业“皇冠上的明珠”。图片由 AI 生成（横版 16:9），已放入 <code>swiper-imgs/aida_modu_1.jpg</code>，四个演示的 slide 结构均已补齐。</p>
+    <p><b>AI 生图提示词：</b></p>
+    <pre><code>Photorealistic aerial view of Adora Magic City, China's first domestically built
+large cruise ship: huge white hull with blue-and-red wave artwork, multiple decks,
+docked at Shanghai Wusongkou cruise terminal at golden hour, warm sunlight,
+drone photography, ultra detailed, 16:9 landscape, no text, no watermark.</code></pre>
+    <figure class="bzy_hw_figure">
+      <img src="swiper-imgs/aida_modu_1.jpg" alt="爱达·魔都号 AI 生成图">
+      <figcaption>AI 生成的 16:9 展品图 · 爱达·魔都号</figcaption>
+    </figure>
+    <p><b>slide 结构：</b></p>
+    <pre><code>&lt;div class="swiper-slide"&gt;
+  &lt;img src="swiper-imgs/aida_modu_1.jpg" alt="爱达·魔都号"&gt;
+  &lt;div class="wy-cap"&gt;
+    &lt;h3&gt;爱达·魔都号&lt;/h3&gt;
+    &lt;p&gt;首艘国产大型邮轮 · 2024 年 1 月商业首航&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+    <h3>② 超纲能力：keyboard 键盘控制</h3>
+    <pre><code>// 任务三超纲能力：键盘左右方向键控制，onlyInViewport 表示轮播进入视口才响应
+keyboard: {
+  enabled: true,
+  onlyInViewport: true
+}</code></pre>
+    <p>作业页的演示四已启用：滚动到演示四可见时，按键盘 ← → 即可切换幻灯片。选 <code>onlyInViewport</code> 是因为页面有 4 个轮播，只让当前看得到的那个响应键盘，避免互相抢事件。</p>
+
+    <h3>③ 答辩四连问准备</h3>
+    <div class="bzy_hw_qa">
+      <b>问：这段代码什么意思？</b>
+      <p><code>keyboard.enabled: true</code> 打开键盘控制模块；<code>onlyInViewport: true</code> 表示只有该轮播出现在视口内时才监听方向键，离开视口自动失效。左右方向键分别对应 prev / next。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：AI 第一次给的结果哪里不对，你改了什么？</b>
+      <p>第一次 AI 只写了 <code>keyboard: true</code>，Swiper 11 要求对象配置，布尔值不生效；并且没加 <code>onlyInViewport</code>，页面滚到别处按方向键仍会翻动演示四。改为对象写法并补上 <code>onlyInViewport: true</code> 后正常。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：新参数的作用？</b>
+      <p><code>enabled</code> 是键盘模块总开关；<code>onlyInViewport</code> 把响应范围限制在“可见”状态，多轮播页面里尤其必要，属于避免事件冲突的行为约束。</p>
+    </div>
+    <div class="bzy_hw_qa">
+      <b>问：现场把 delay 改成指定值并解释预期变化？</b>
+      <p>例如把 3200 改成 1500：每 1.5 秒翻一张，节奏明显加快；改成 6000：6 秒才翻一张，更从容。注意 delay 在实例创建时读取，改完后要重建实例，或在控制台执行 <code>bzy_swiper4.params.autoplay.delay = 1500; bzy_swiper4.autoplay.start();</code> 才会生效。</p>
+    </div>
+  </div>
+
+  <footer>
+    梁铭巨 · 24002120401 · 高级网页设计第三次课作业 · 2026-11-11<br>
+    作业页面：swiper-task.html　|　提交分支：feat/swiper-task
+  </footer>
+</div>
+
+<script>
+  // 函数功能：初始化本页的实时验证台轮播，复现 cube + 3.2 秒自动播放 + 可点圆点
+  new Swiper('#bzy_hw_verify', {
+    loop: true,
+    speed: 800,
+    effect: 'cube',
+    autoplay: {
+      delay: 3200,
+      disableOnInteraction: false
+    },
+    pagination: {
+      el: '#bzy_hw_verify_pag',
+      clickable: true
+    },
+    cubeEffect: {
+      shadow: true,
+      slideShadows: true,
+      shadowOffset: 20,
+      shadowScale: 0.94
+    }
+  });
+</script>
+</body>
+</html>
