@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<!--
+  作者：梁铭巨
+  学号：24002120401
+  建立时间：2026-11-11
+  使用大模型：DeepSeek-V4.1-Flash
+  功能名称：Swiper 课堂操作任务 · 大国重器光影展
+  防伪码：LMJ-401-20261111
+-->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Swiper 课堂操作任务 · 大国重器光影展 · 补全 JS</title>
@@ -84,10 +92,18 @@
   .wy-entry a{display:inline-block;text-decoration:none;color:#fff;font-size:14.5px;font-weight:bold;background:linear-gradient(135deg,#e8890c,#c2410c);border-radius:999px;padding:12px 30px;box-shadow:0 8px 20px rgba(232,137,12,.28);transition:transform .2s,box-shadow .2s}
   .wy-entry a:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(232,137,12,.36)}
 
+  /* 防伪标识：右下角个人印章（作者 梁铭巨 / 24002120401 / 防伪码） */
+  .wy-seal{position:fixed;right:16px;bottom:16px;z-index:999;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.96);border:1px solid #e8dcc4;border-radius:14px;padding:8px 14px 8px 8px;text-decoration:none;box-shadow:0 8px 22px rgba(15,43,91,.18);transition:transform .2s,box-shadow .2s}
+  .wy-seal:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,43,91,.24)}
+  .wy-seal .wy-seal-stamp{width:40px;height:40px;flex:none;border:2px solid #c0392b;border-radius:7px;color:#c0392b;font-size:11px;font-weight:bold;line-height:1.05;display:flex;align-items:center;justify-content:center;text-align:center;transform:rotate(-6deg);letter-spacing:1px}
+  .wy-seal .wy-seal-txt{font-size:11px;color:#8a7a5f;line-height:1.6}
+  .wy-seal .wy-seal-txt b{display:block;font-size:12.5px;color:#0f2b5b}
+  @media (max-width:600px){.wy-seal{right:10px;bottom:10px;transform:scale(.9);transform-origin:right bottom}}
+
   footer{text-align:center;margin-top:34px;color:#9ca3af;font-size:13px;line-height:2}
 </style>
 </head>
-<body>
+<body data-author="梁铭巨-24002120401-LMJ401">
 <div class="wy-wrap">
 
   <div class="wy-head">
@@ -241,7 +257,13 @@
 
   <div class="wy-back"><a href="index.html">← 返回课堂实践中心</a>　<a href="swiper-homework.html">📝 提示词与答辩记录 →</a>　<a href="swiper-lesson.html">查看教师讲解版 →</a></div>
 
-  <footer>Swiper 课堂操作任务 · 大国重器光影展（学生版） · 高级网页设计 · 2026-2027-1</footer>
+  <footer>Swiper 课堂操作任务 · 大国重器光影展（学生版） · 高级网页设计 · 2026-2027-1<br>作者：梁铭巨 · 24002120401 · 防伪码 LMJ-401-20261111</footer>
+
+  <!-- 防伪标识：作者 梁铭巨 / 学号 24002120401 / 防伪码 LMJ-401-20261111 -->
+  <a class="wy-seal" href="swiper-homework.html" title="作者：梁铭巨 24002120401 · 防伪码 LMJ-401-20261111">
+    <span class="wy-seal-stamp">梁<br>铭巨</span>
+    <span class="wy-seal-txt"><b>梁铭巨 · 24002120401</b>防伪码 LMJ-401-20261111</span>
+  </a>
 </div>
 
 <script>
@@ -349,6 +371,12 @@
       bzy_swiper4 = new Swiper('#wySw4', bzy_sw4Options(btn.dataset.fx));
     });
   });
+
+  // 函数功能：在浏览器控制台打印作者与防伪码，作为本页的归属标识
+  function bzy_printSeal() {
+    console.log('%c 大国重器光影展 · 作者 梁铭巨（24002120401）· 防伪码 LMJ-401-20261111 ', 'background:#0f2b5b;color:#ffd166;padding:6px 12px;border-radius:6px;font-size:13px');
+  }
+  bzy_printSeal();
 </script>
 </body>
 </html>

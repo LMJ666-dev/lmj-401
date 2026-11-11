@@ -103,3 +103,9 @@
 - **执行结果**: 修改 swiper-task.html（初始 cube、6 件展品、7 个效果按钮、keyboard）；新建 swiper-homework.html 提示词与答辩记录页；24002120401-梁铭巨/index.html 增加两个入口；生成 swiper-imgs/aida_modu_1.jpg
 ---
 
+- **时间**: 2026-11-11
+- **模型**: DeepSeek-V4.1-Flash
+- **提示词**: 需要加进去一点自己的东西，就相当于防伪标识
+- **执行结果**: swiper-task.html 与 swiper-homework.html 增加右下角红色个人印章（梁铭巨 · 24002120401）、统一防伪码 LMJ-401-20261111、页脚署名、body data-author 属性、HTML 注释与控制台签名；swiper-homework.html 增加个人签名/防伪声明区
+---
+
