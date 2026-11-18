@@ -1,0 +1,65 @@
+<!-- 
+  项目：汽车上市信息列表
+  作者：梁铭巨
+  说明：一比一还原参考图片中的汽车上市列表界面
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车上市信息</title>
+    <!-- 梁铭巨：引入样式文件 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 梁铭巨：页面主体容器 -->
+    <div class="lmj_container">
+        <!-- 梁铭巨：标签页导航区域 -->
+        <div class="lmj_tabs">
+            <!-- 梁铭巨：最新上市标签（默认选中） -->
+            <div class="lmj_tab lmj_tab_active" id="lmj_tab_new" data-target="lmj_panel_new">
+                最新上市
+            </div>
+            <!-- 梁铭巨：即将上市标签 -->
+            <div class="lmj_tab" id="lmj_tab_upcoming" data-target="lmj_panel_upcoming">
+                即将上市
+            </div>
+        </div>
+
+        <!-- 梁铭巨：标签内容面板区域 -->
+        <div class="lmj_panels">
+            <!-- 梁铭巨：最新上市面板 -->
+            <div class="lmj_panel lmj_panel_active" id="lmj_panel_new">
+                <!-- 梁铭巨：列表表头 -->
+                <div class="lmj_table_header">
+                    <div class="lmj_th lmj_th_date">上市时间</div>
+                    <div class="lmj_th lmj_th_model">品牌/车型</div>
+                    <div class="lmj_th lmj_th_price">售价（万元）</div>
+                </div>
+                <!-- 梁铭巨：列表数据行 -->
+                <div class="lmj_table_body" id="lmj_table_body_new">
+                    <!-- 数据由JS动态渲染 -->
+                </div>
+            </div>
+
+            <!-- 梁铭巨：即将上市面板 -->
+            <div class="lmj_panel" id="lmj_panel_upcoming">
+                <!-- 梁铭巨：列表表头 -->
+                <div class="lmj_table_header">
+                    <div class="lmj_th lmj_th_date">上市时间</div>
+                    <div class="lmj_th lmj_th_model">品牌/车型</div>
+                    <div class="lmj_th lmj_th_price">售价（万元）</div>
+                </div>
+                <!-- 梁铭巨：列表数据行 -->
+                <div class="lmj_table_body" id="lmj_table_body_upcoming">
+                    <!-- 数据由JS动态渲染 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 梁铭巨：引入脚本文件 -->
+    <script src="script.js"></script>
+</body>
+</html>

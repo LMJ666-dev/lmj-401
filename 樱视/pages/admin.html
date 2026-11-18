@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--
+  项目：Bilibili 模仿网站 - 高级网页设计 I 期末作业
+  姓名：梁铭巨    学号：24002120401
+  文件：pages/admin.html（后台管理页面）
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>后台管理 - 樱视 SakuraSee | 梁铭巨 24002120401</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <header class="liang-nav">
+    <a href="../index.html" class="liang-nav__logo">
+      <img src="../images/logo.svg?v=4" alt="logo" width="36" height="24">
+      <span>樱视 SakuraSee</span>
+    </a>
+    <nav class="liang-nav__menu">
+      <a href="../index.html">回到前台</a>
+    </nav>
+  </header>
+
+  <main class="liang-container">
+    <h2 style="margin-bottom:16px">后台管理控制台</h2>
+    <div class="liang-admin-layout">
+      <!-- 侧边菜单 -->
+      <aside class="liang-admin-aside">
+        <a href="#" class="active">用户管理</a>
+        <a href="#">视频管理</a>
+        <a href="#">评论管理</a>
+        <a href="#">数据统计</a>
+      </aside>
+
+      <!-- 主内容 -->
+      <div class="liang-admin-main">
+        <h3 style="margin-bottom:10px">用户列表</h3>
+        <table class="liang-table">
+          <thead>
+            <tr><th>UID</th><th>昵称</th><th>等级</th><th>注册时间</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody id="liang-admin-tbody">
+            <tr><td>10001</td><td>铭巨同学</td><td>LV5</td><td>2024-09-01</td><td>正常</td><td class="del">删除</td></tr>
+            <tr><td>10002</td><td>路过的同学</td><td>LV3</td><td>2024-09-05</td><td>正常</td><td class="del">删除</td></tr>
+            <tr><td>10003</td><td>前端小菜鸡</td><td>LV6</td><td>2024-08-12</td><td>正常</td><td class="del">删除</td></tr>
+            <tr><td>10004</td><td>动漫杂谈菌</td><td>LV4</td><td>2024-10-01</td><td>禁言</td><td class="del">删除</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin:24px 0 10px">新增用户</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="liang-new-uid" placeholder="UID" style="padding:6px;border:1px solid #E3E5E7;border-radius:6px">
+          <input id="liang-new-name" placeholder="昵称" style="padding:6px;border:1px solid #E3E5E7;border-radius:6px">
+          <button class="liang-btn" onclick="liangAddUser()">添加</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="liang-footer">
+    <p>樱视 SakuraSee 模仿项目 · 梁铭巨 24002120401</p>
+  </footer>
+
+  <script src="../data/data.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    // 后台：新增用户行（JS 效果补充）
+    function liangAddUser() {
+      const uid = document.getElementById("liang-new-uid").value.trim();
+      const name = document.getElementById("liang-new-name").value.trim();
+      if (!uid || !name) { alert("请填写 UID 和昵称"); return; }
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${uid}</td><td>${name}</td><td>LV1</td><td>刚刚</td><td>正常</td><td class="del">删除</td>`;
+      document.querySelector("#liang-admin-tbody").appendChild(tr);
+      document.getElementById("liang-new-uid").value = "";
+      document.getElementById("liang-new-name").value = "";
+    }
+  </script>
+<nav class="liang-bottom-nav">
+  <a href="../index.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H7v-9H4z"/></svg>
+    <span>首页</span>
+  </a>
+  <a href="channel.html?cat=anime">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+    <span>番剧</span>
+  </a>
+  <a href="channel.html?cat=live">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zm2 4v8h10V8H7z"/></svg>
+    <span>直播</span>
+  </a>
+  <a href="mine.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+    <span>我的</span>
+  </a>
+</nav>
+</body>
+</html>

@@ -127,4 +127,26 @@
 - **模型**: Trae AI Assistant
 - **提示词**: 读取 https://spontaneous-valkyrie-4e4229.netlify.app/mobile-events-lesson 网页中的任务并完成
 - **执行结果**: 完成任务二/三/四——mobile-gesture.html（左右滑切换 4 张美食卡片，阈值 40px + 300ms 冷却 + 边界提示）、mobile-zoom.html（双指缩放以两指中点为基准，1~4x + 双击 1x↔2x + 放大后拖动 + 边界回弹）、mobile-sensor.html（devicemotion accelerationIncludingGravity 阈值 18 + 1.5s 冷却 + iOS 权限请求 + 设备不支持时按钮降级）。浏览器实测三页均 0 error / 0 404
+---
+- **时间**: 2026-11-18
+- **模型**: Trae AI Assistant
+- **提示词**: 提交到 GitHub 上，并建立新分支
+- **执行结果**: 新建分支 feat/mobile-events-lmj（基于 feat/swiper-homework），commit 7eef3d1 包含 412 files changed（rename webprojectbzy→lmj、bzy_prompt→lmj_prompt、项目/bzy-*.css→lmj-*.css、新增 mobile-*.html、poems.html、db/、swiper/），推送到 github.com:LMJ666-dev/lmj-401.git
+---
+- **时间**: 2026-11-18
+- **模型**: Trae AI Assistant
+- **提示词**: 把 index.html 从自动跳转改成项目导航首页，给每个项目都做一个入口卡片
+- **执行结果**: 重写根目录 index.html 为导航首页，卡片网格 + 分类筛选（移动端事件/响应式/JS DOM/Swiper/综合项目），共 12 个项目入口
+
+
+---
+- **时间**: 2026-11-18
+- **模型**: Trae AI Assistant
+- **提示词**: 恢复根目录 index.html，改子项目首页（24002120401-梁铭巨/index.html），目录+卡片从 5 项扩到 10 项，和对方页面数量一致
+- **执行结果**: 1) git checkout 恢复根目录 index.html 为自动跳转；2) 子项目首页 toc 从 6 项（含 1 占位）→ 10 项，module-grid 从 5 完成+1 pending → 10 完成，footer nav 同步扩；新增入口：JS函数(function005)、抓小球游戏(catchBall)、新闻Tab(tab_news)、诗词图鉴(poems)、移动端任务(mobile-gesture)、响应式闲鱼(responsive)。浏览器实测 toc=10 / cards=10 / footer=9 / 0 error
+---
+- **时间**: 2026-11-18
+- **模型**: DeepSeek-V4.1-Flash
+- **提示词**: 把我们新的文件夹全部交到github上，并建立新分支
+- **执行结果**: 新建分支 feat/final-assignments-lmj；提交 新闻/（汽车上市列表页 + style.css/script.js 复原）、樱视/（Bilibili 风格期末作业站，30 个文件，修复 7 个页面 `n 脚本拼接错误）、catchBall.html 结构补全、swiper-task.html 死链移除、24002120401-梁铭巨/index.html 首页入口替换（闲鱼→樱视、新增新闻），推送到 github.com:LMJ666-dev/lmj-401.git
 

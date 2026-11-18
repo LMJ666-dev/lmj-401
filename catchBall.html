@@ -1,25 +1,103 @@
-<script>
-    const ball = document.getElementById('ball');
-    const scoreSpan = document.getElementById('score');
-    let score = 0;
+<!--
+  作者：梁铭巨
+  建立时间：2026-11-04
+  使用大模型：DeepSeek-V4.1-Flash
+  功能名称：抓小球小游戏（点击小球加分）
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抓小球游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    // 小球随机位置
-    function moveBall(){
-        let w = window.innerWidth - 50;
-        let h = window.innerHeight - 50;
-        let x = Math.random() * w;
-        let y = Math.random() * h;
-        ball.style.position = 'absolute';
-        ball.style.left = x + 'px';
-        ball.style.top = y + 'px';
-    }
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 40%, #1b2a4a 0%, #0d1626 70%);
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            overflow: hidden;
+        }
 
-    // 点击小球加分
-    ball.onclick = function(){
-        score++;
-        scoreSpan.innerText = score;
-        moveBall();
-    }
+        #lmj_homeLink {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 9999;
+            padding: 8px 14px;
+            color: #fff;
+            background: #345ca8;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-    moveBall();
-</script>
+        .lmj_score {
+            position: fixed;
+            top: 18px;
+            left: 22px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .lmj_tip {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 13px;
+        }
+
+        #lmj_ball {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 30%, #ffe08a 0%, #ff9f43 45%, #ef476f 100%);
+            box-shadow: 0 0 18px rgba(239, 71, 111, 0.75);
+            cursor: pointer;
+            transition: left 0.15s ease, top 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <a id="lmj_homeLink" href="24002120401-梁铭巨/index.html">← 返回首页</a>
+    <div class="lmj_score">得分：<span id="lmj_score">0</span></div>
+    <div class="lmj_tip">点击小球即可得分，小球会随机跳到新位置</div>
+    <div id="lmj_ball"></div>
+
+    <script>
+        var lmj_ball = document.getElementById('lmj_ball');
+        var lmj_scoreSpan = document.getElementById('lmj_score');
+        var lmj_score = 0;
+
+        // 函数功能：把小球随机移动到当前可视区域内的新位置
+        function lmj_moveBall() {
+            var w = window.innerWidth - 50;
+            var h = window.innerHeight - 50;
+            var x = Math.random() * w;
+            var y = Math.random() * h;
+            lmj_ball.style.left = x + 'px';
+            lmj_ball.style.top = y + 'px';
+        }
+
+        // 函数功能：点击小球时加 1 分，并把小球移到新位置
+        function lmj_hitBall() {
+            lmj_score++;
+            lmj_scoreSpan.innerText = lmj_score;
+            lmj_moveBall();
+        }
+
+        lmj_ball.onclick = lmj_hitBall;
+
+        // 函数功能：页面加载后初始化小球位置
+        lmj_moveBall();
+    </script>
+</body>
+</html>

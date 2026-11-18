@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!--
+  项目：Bilibili 模仿网站 - 高级网页设计 I 期末作业
+  姓名：梁铭巨    学号：24002120401
+  文件：pages/video.html（三级页面：视频内容页）
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频播放 - 樱视 SakuraSee | 梁铭巨 24002120401</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <header class="liang-nav">
+    <a href="../index.html" class="liang-nav__logo">
+      <img src="../images/logo.svg?v=4" alt="logo" width="36" height="24">
+      <span>樱视 SakuraSee</span>
+    </a>
+    <nav class="liang-nav__menu">
+      <a href="../index.html">首页</a>
+      <a href="channel.html?cat=anime">番剧</a>
+      <a href="channel.html?cat=live">直播</a>
+      <a href="channel.html?cat=game">游戏</a>
+      <a href="rank.html">排行榜</a>
+    </nav>
+    <div class="liang-nav__search">
+      <input type="text" placeholder="搜索你感兴趣的视频">
+      <button type="button">搜索</button>
+    </div>
+    <div class="liang-nav__user">
+      <a href="login.html" class="liang-nav__upload">登录</a>
+      <a href="mine.html"><img src="../images/avatar.svg" alt="我的头像"></a>
+    </div>
+  </header>
+
+  <main class="liang-container">
+    <!-- 播放器 -->
+    <div class="liang-player">
+      <div class="liang-player__screen">
+        <div>
+          <div style="font-size:48px">▶</div>
+          <div style="margin-top:8px">此处为视频播放器占位（本地资源演示）</div>
+        </div>
+      </div>
+      <!-- 弹幕层（弹幕来自 data/danmaku.json） -->
+      <div class="liang-danmaku-layer" id="liang-danmaku"></div>
+    </div>
+
+    <!-- 标题 -->
+    <h1 id="liang-video-title" style="font-size:20px;margin-top:16px"></h1>
+
+    <!-- UP 主 + 操作栏 -->
+    <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+      <img src="../images/avatar.svg" alt="up" style="width:44px;height:44px;border-radius:50%">
+      <div>
+        <div id="liang-video-up" style="font-weight:600"></div>
+        <div id="liang-video-stat" style="color:#9499A0;font-size:12px"></div>
+      </div>
+    </div>
+
+    <div class="liang-action-bar">
+      <button class="liang-btn" data-like>👍 <span data-n="0">0</span></button>
+      <button class="liang-btn" data-like>🪙 <span data-n="0">0</span></button>
+      <button class="liang-btn" data-like>⭐ <span data-n="0">0</span></button>
+      <button class="liang-btn liang-btn--ghost">↗ 分享</button>
+    </div>
+
+    <!-- 简介 -->
+    <div class="liang-panel">
+      <div id="liang-video-desc" style="color:#61666D"></div>
+    </div>
+
+    <!-- 评论区 -->
+    <div class="liang-panel">
+      <h3 style="margin-bottom:10px">评论 <span id="liang-comment-count" style="color:#9499A0"></span></h3>
+      <div id="liang-comment-list"></div>
+    </div>
+
+    <!-- 相关推荐 -->
+    <div class="liang-section-title">
+      <h2>相关推荐</h2>
+    </div>
+    <div class="liang-grid" id="liang-home-grid"></div>
+  </main>
+
+  <footer class="liang-footer">
+    <p>樱视 SakuraSee 模仿项目 · 梁铭巨 24002120401</p>
+  </footer>
+
+  <script src="../data/data.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    // 视频详情：fetch data/video.json 填充页面
+    (async function () {
+      const data = await liangFetchJSON("../data/video.json");
+      if (!data) return;
+      document.title = data.title + " - 樱视 SakuraSee | 梁铭巨 24002120401";
+      document.querySelector("#liang-video-title").textContent = data.title;
+      document.querySelector("#liang-video-up").textContent = "@" + data.up;
+      document.querySelector("#liang-video-stat").textContent =
+        "播放 " + data.play + " · 弹幕 " + data.danmaku;
+      document.querySelector("#liang-video-desc").textContent = data.desc;
+
+      // 初始化三个点赞按钮的数值
+      const bars = document.querySelectorAll("[data-like] span");
+      bars[0].dataset.n = bars[0].textContent = data.like;
+      bars[1].dataset.n = bars[1].textContent = data.coin;
+      bars[2].dataset.n = bars[2].textContent = data.fav;
+
+      // 评论列表
+      const list = document.querySelector("#liang-comment-list");
+      document.querySelector("#liang-comment-count").textContent = "(" + data.comments.length + ")";
+      data.comments.forEach((c) => {
+        const item = document.createElement("div");
+        item.className = "liang-comment__item";
+        item.innerHTML = `
+          <img src="../images/avatar.svg" alt="">
+          <div>
+            <div style="color:#23ADE5">@${c.user}</div>
+            <div style="margin:4px 0">${c.text}</div>
+            <div style="color:#9499A0;font-size:12px">赞 ${c.likes}</div>
+          </div>`;
+        list.appendChild(item);
+      });
+    })();
+  </script>
+<nav class="liang-bottom-nav">
+  <a href="../index.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H7v-9H4z"/></svg>
+    <span>首页</span>
+  </a>
+  <a href="channel.html?cat=anime">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+    <span>番剧</span>
+  </a>
+  <a href="channel.html?cat=live">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zm2 4v8h10V8H7z"/></svg>
+    <span>直播</span>
+  </a>
+  <a href="mine.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+    <span>我的</span>
+  </a>
+</nav>
+</body>
+</html>

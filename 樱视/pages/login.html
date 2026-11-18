@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--
+  项目：Bilibili 模仿网站 - 高级网页设计 I 期末作业
+  姓名：梁铭巨    学号：24002120401
+  文件：pages/login.html（自选页面：登录页）
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 樱视 SakuraSee | 梁铭巨 24002120401</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <header class="liang-nav">
+    <a href="../index.html" class="liang-nav__logo">
+      <img src="../images/logo.svg?v=4" alt="logo" width="36" height="24">
+      <span>樱视 SakuraSee</span>
+    </a>
+  </header>
+
+  <div class="liang-login-wrap">
+    <div class="liang-login-box">
+      <h1>樱视 SakuraSee 登录</h1>
+      <p style="text-align:center;color:#9499A0;font-size:13px;margin-bottom:16px">欢迎回来，请登录你的账号</p>
+      <form onsubmit="return liangDoLogin(event)">
+        <label style="display:block;margin:12px 0 4px;color:#61666D;font-size:13px">账号</label>
+        <input id="liang-login-user" type="text" placeholder="请输入账号"
+               style="width:100%;padding:9px 12px;border:1px solid #E3E5E7;border-radius:6px">
+        <label style="display:block;margin:12px 0 4px;color:#61666D;font-size:13px">密码</label>
+        <input id="liang-login-pass" type="password" placeholder="请输入密码"
+               style="width:100%;padding:9px 12px;border:1px solid #E3E5E7;border-radius:6px">
+        <button class="liang-btn" type="submit" style="width:100%;justify-content:center;margin-top:20px">登 录</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function liangDoLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById("liang-login-user").value.trim();
+      const p = document.getElementById("liang-login-pass").value.trim();
+      if (!u || !p) { alert("请输入账号和密码"); return false; }
+      alert("演示登录成功，正在跳转到首页…");
+      location.href = "../index.html";
+      return false;
+    }
+  </script>
+<nav class="liang-bottom-nav">
+  <a href="../index.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H7v-9H4z"/></svg>
+    <span>首页</span>
+  </a>
+  <a href="channel.html?cat=anime">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+    <span>番剧</span>
+  </a>
+  <a href="channel.html?cat=live">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zm2 4v8h10V8H7z"/></svg>
+    <span>直播</span>
+  </a>
+  <a href="mine.html">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+    <span>我的</span>
+  </a>
+</nav>
+</body>
+</html>

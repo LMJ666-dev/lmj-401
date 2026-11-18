@@ -1,0 +1,165 @@
+/* 
+  项目：汽车上市信息列表
+  作者：梁铭巨
+  说明：一比一还原参考图片中的样式
+*/
+
+/* 梁铭巨：全局重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    background-color: #f5f5f5;
+    padding: 40px 20px;
+}
+
+/* 梁铭巨：主容器 */
+.lmj_container {
+    max-width: 520px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 梁铭巨：标签页区域 */
+.lmj_tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* 梁铭巨：单个标签样式 */
+.lmj_tab {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 15px;
+    color: #666666;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+/* 梁铭巨：标签hover效果 */
+.lmj_tab:hover {
+    color: #333333;
+}
+
+/* 梁铭巨：选中状态标签 */
+.lmj_tab_active {
+    color: #1a5cb8;
+    font-weight: bold;
+}
+
+/* 梁铭巨：选中标签底部蓝色下划线 */
+.lmj_tab_active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background-color: #1a5cb8;
+}
+
+/* 梁铭巨：标签内容面板 */
+.lmj_panels {
+    position: relative;
+}
+
+/* 梁铭巨：单个面板，默认隐藏 */
+.lmj_panel {
+    display: none;
+}
+
+/* 梁铭巨：激活面板显示 */
+.lmj_panel_active {
+    display: block;
+}
+
+/* 梁铭巨：表格表头 */
+.lmj_table_header {
+    display: flex;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* 梁铭巨：表头单元格通用样式 */
+.lmj_th {
+    padding: 12px 15px;
+    font-size: 13px;
+    color: #999999;
+    font-weight: normal;
+}
+
+/* 梁铭巨：上市时间列宽 */
+.lmj_th_date {
+    width: 30%;
+}
+
+/* 梁铭巨：品牌/车型列宽 */
+.lmj_th_model {
+    width: 45%;
+}
+
+/* 梁铭巨：售价列宽 */
+.lmj_th_price {
+    width: 25%;
+    text-align: right;
+}
+
+/* 梁铭巨：表格主体 */
+.lmj_table_body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 梁铭巨：数据行 */
+.lmj_row {
+    display: flex;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.15s ease;
+}
+
+/* 梁铭巨：最后一行去掉底部边框 */
+.lmj_row:last-child {
+    border-bottom: none;
+}
+
+/* 梁铭巨：数据行hover效果 */
+.lmj_row:hover {
+    background-color: #fafafa;
+}
+
+/* 梁铭巨：单元格通用样式 */
+.lmj_td {
+    padding: 14px 15px;
+    font-size: 14px;
+    color: #333333;
+}
+
+/* 梁铭巨：日期单元格 */
+.lmj_td_date {
+    width: 30%;
+    color: #666666;
+}
+
+/* 梁铭巨：车型单元格 */
+.lmj_td_model {
+    width: 45%;
+    color: #333333;
+}
+
+/* 梁铭巨：价格单元格 */
+.lmj_td_price {
+    width: 25%;
+    text-align: right;
+    color: #d9534f;
+}
