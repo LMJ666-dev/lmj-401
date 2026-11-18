@@ -1,0 +1,197 @@
+﻿<!--
+  作者：梁铭巨
+  建立时间：2026-11-13
+  使用大模型：Trae AI Assistant
+  功能名称：诗词展示页 - 上图下文卡片结构，数据来自本地 Node.js 服务器（端口 3004）
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>诗词鉴赏 · 上图下文</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", serif;
+      background: linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    /* 首页入口链接 */
+    #lmj_homeLink {
+      display: inline-block;
+      margin-bottom: 30px;
+      padding: 8px 18px;
+      background: #8b6914;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    #lmj_homeLink:hover { background: #6b5010; }
+
+    h1 {
+      text-align: center;
+      color: #5a3a1a;
+      font-size: 32px;
+      margin-bottom: 10px;
+      letter-spacing: 4px;
+    }
+    .lmj_subtitle {
+      text-align: center;
+      color: #8b6914;
+      font-size: 14px;
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+    }
+
+    /* 卡片网格 */
+    .lmj_grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* 单张卡片 - 上图下文 */
+    .lmj_card {
+      background: #fffaf0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(139, 105, 20, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .lmj_card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(139, 105, 20, 0.25);
+    }
+
+    /* 图片区域 */
+    .lmj_card-img {
+      width: 100%;
+      height: 220px;
+      background: #e8d5b7;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lmj_card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .lmj_card:hover .lmj_card-img img {
+      transform: scale(1.05);
+    }
+
+    /* 文字区域 */
+    .lmj_card-body {
+      padding: 20px;
+      text-align: center;
+    }
+    .lmj_card-title {
+      font-size: 20px;
+      color: #5a3a1a;
+      margin-bottom: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .lmj_card-content {
+      font-size: 15px;
+      color: #7a5a3a;
+      line-height: 1.8;
+    }
+
+    /* 加载状态 */
+    .lmj_loading, .lmj_error, .lmj_empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8b6914;
+      font-size: 16px;
+    }
+    .lmj_loading::after {
+      content: '';
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #8b6914;
+      border-top-color: transparent;
+      border-radius: 50%;
+      margin-left: 10px;
+      vertical-align: middle;
+      animation: lmj_spin 0.8s linear infinite;
+    }
+    @keyframes lmj_spin { to { transform: rotate(360deg); } }
+
+    .lmj_error { color: #c0392b; }
+    .lmj_error a { color: #8b6914; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <a id="lmj_homeLink" href="index.html">← 返回首页</a>
+
+  <h1>诗 词 鉴 赏</h1>
+  <p class="lmj_subtitle">· 上图下文卡片展示 ·</p>
+
+  <div id="lmj_container">
+    <div class="lmj_loading">正在加载诗词数据</div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3004/api/poems';
+
+    // 函数功能：从服务器获取诗词数据并渲染到页面
+    async function lmj_fetchPoems() {
+      const container = document.getElementById('lmj_container');
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('服务器返回 ' + res.status);
+        const data = await res.json();
+        const poems = data.poems || [];
+
+        if (poems.length === 0) {
+          container.innerHTML = '<div class="lmj_empty">暂无诗词数据</div>';
+          return;
+        }
+
+        lmj_renderCards(poems);
+      } catch (err) {
+        console.error('[lmj_fetchPoems] 加载失败:', err);
+        container.innerHTML =
+          '<div class="lmj_error">❌ 加载失败：' + err.message + '<br>' +
+          '请先在 db 目录执行：<code style="background:#eee;padding:2px 6px;border-radius:4px;">node server.js</code></div>';
+      }
+    }
+
+    // 函数功能：将诗词数组渲染为上图下文的卡片网格
+    function lmj_renderCards(poems) {
+      const container = document.getElementById('lmj_container');
+      const grid = document.createElement('div');
+      grid.className = 'lmj_grid';
+
+      poems.forEach(function (poem) {
+        const card = document.createElement('div');
+        card.className = 'lmj_card';
+        card.innerHTML =
+          '<div class="lmj_card-img"><img src="' + poem.pic + '" alt="' + poem.title + '" onerror="this.parentElement.innerHTML=\'<span style=color:#999>图片加载失败</span>\'"></div>' +
+          '<div class="lmj_card-body">' +
+            '<h3 class="lmj_card-title">' + poem.title + '</h3>' +
+            '<p class="lmj_card-content">' + poem.content + '</p>' +
+          '</div>';
+        grid.appendChild(card);
+      });
+
+      container.innerHTML = '';
+      container.appendChild(grid);
+    }
+
+    // 页面加载完成后获取数据
+    lmj_fetchPoems();
+  </script>
+</body>
+</html>

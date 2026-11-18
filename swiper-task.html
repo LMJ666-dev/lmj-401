@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <!--
@@ -7,7 +7,7 @@
   建立时间：2026-11-11
   使用大模型：DeepSeek-V4.1-Flash
   功能名称：Swiper 课堂操作任务 · 大国重器光影展
-  防伪码：LMJ-401-20261111
+  防伪码：lmj-401-20261111
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,7 +103,7 @@
   footer{text-align:center;margin-top:34px;color:#9ca3af;font-size:13px;line-height:2}
 </style>
 </head>
-<body data-author="梁铭巨-24002120401-LMJ401">
+<body data-author="梁铭巨-24002120401-lmj401">
 <div class="wy-wrap">
 
   <div class="wy-head">
@@ -257,12 +257,12 @@
 
   <div class="wy-back"><a href="index.html">← 返回课堂实践中心</a>　<a href="swiper-homework.html">📝 提示词与答辩记录 →</a>　<a href="swiper-lesson.html">查看教师讲解版 →</a></div>
 
-  <footer>Swiper 课堂操作任务 · 大国重器光影展（学生版） · 高级网页设计 · 2026-2027-1<br>作者：梁铭巨 · 24002120401 · 防伪码 LMJ-401-20261111</footer>
+  <footer>Swiper 课堂操作任务 · 大国重器光影展（学生版） · 高级网页设计 · 2026-2027-1<br>作者：梁铭巨 · 24002120401 · 防伪码 lmj-401-20261111</footer>
 
-  <!-- 防伪标识：作者 梁铭巨 / 学号 24002120401 / 防伪码 LMJ-401-20261111 -->
-  <a class="wy-seal" href="swiper-homework.html" title="作者：梁铭巨 24002120401 · 防伪码 LMJ-401-20261111">
+  <!-- 防伪标识：作者 梁铭巨 / 学号 24002120401 / 防伪码 lmj-401-20261111 -->
+  <a class="wy-seal" href="swiper-homework.html" title="作者：梁铭巨 24002120401 · 防伪码 lmj-401-20261111">
     <span class="wy-seal-stamp">梁<br>铭巨</span>
-    <span class="wy-seal-txt"><b>梁铭巨 · 24002120401</b>防伪码 LMJ-401-20261111</span>
+    <span class="wy-seal-txt"><b>梁铭巨 · 24002120401</b>防伪码 lmj-401-20261111</span>
   </a>
 </div>
 
@@ -309,7 +309,7 @@
 
   // ── 任务 4：初始化 #wySw4，循环 + 3.2 秒自动播放 + 圆点 + 初始 effect 为 cube ──
   // 函数功能：生成 #wySw4 的配置对象，按传入的效果名返回完整参数（供初始化与按钮重建复用）
-  function bzy_sw4Options(fx) {
+  function lmj_sw4Options(fx) {
     return {
       loop: true,
       speed: 800,
@@ -353,7 +353,7 @@
   }
 
   // 函数功能：用上面生成的配置初始化第四个轮播，并保存实例供按钮点击时销毁重建
-  var bzy_swiper4 = new Swiper('#wySw4', bzy_sw4Options('cube'));
+  var lmj_swiper4 = new Swiper('#wySw4', lmj_sw4Options('cube'));
 
 
   // ── 任务 4 进阶：补全按钮点击事件，实现七种效果实时切换 ──
@@ -365,18 +365,18 @@
       btn.classList.add('wy-on');
 
       // TODO 2：销毁旧的 wySw4 实例
-      bzy_swiper4.destroy(true, true);
+      lmj_swiper4.destroy(true, true);
 
       // TODO 3：用新 effect 重建实例（把其它配置原样保留）
-      bzy_swiper4 = new Swiper('#wySw4', bzy_sw4Options(btn.dataset.fx));
+      lmj_swiper4 = new Swiper('#wySw4', lmj_sw4Options(btn.dataset.fx));
     });
   });
 
   // 函数功能：在浏览器控制台打印作者与防伪码，作为本页的归属标识
-  function bzy_printSeal() {
-    console.log('%c 大国重器光影展 · 作者 梁铭巨（24002120401）· 防伪码 LMJ-401-20261111 ', 'background:#0f2b5b;color:#ffd166;padding:6px 12px;border-radius:6px;font-size:13px');
+  function lmj_printSeal() {
+    console.log('%c 大国重器光影展 · 作者 梁铭巨（24002120401）· 防伪码 lmj-401-20261111 ', 'background:#0f2b5b;color:#ffd166;padding:6px 12px;border-radius:6px;font-size:13px');
   }
-  bzy_printSeal();
+  lmj_printSeal();
 </script>
 </body>
 </html>

@@ -1,0 +1,277 @@
+﻿@charset "utf-8";
+/* ==========================================================================
+   lmj-xianyu 响应式全屏版样式  |  作者：梁铭巨
+   说明：本文件在 lmj-main.css 之后加载，仅用于 responsive.html。
+        桌面端把「手机单列」重排为「多列自适应」，演示媒体查询的响应式能力。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 平板 / 桌面（≥721px）：去掉手机外壳，内容限宽居中并多列重排
+   -------------------------------------------------------------------------- */
+@media (min-width: 721px) {
+  .lmj-page {
+    display: block;
+    padding: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1000px 420px at 50% -8%, #fff3b8 0%, rgba(255, 243, 184, 0) 62%),
+      linear-gradient(160deg, #f7f8fa 0%, #eef0f4 100%);
+  }
+
+  .lmj-page__title,
+  .lmj-page__subtitle {
+    display: none;
+  }
+
+  .lmj-phone {
+    width: 100%;
+    max-width: 1180px;
+    height: auto;
+    margin: 0 auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .lmj-phone__screen {
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+    display: block;
+  }
+
+  .lmj-phone__notch,
+  .lmj-statusbar,
+  .lmj-homebar {
+    display: none;
+  }
+
+  /* --- 顶部导航：吸顶铺开 --- */
+  .lmj-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 14px 32px 10px;
+    border-radius: 0 0 18px 18px;
+    box-shadow: var(--lmj-shadow-bar);
+  }
+
+  .lmj-header__bar {
+    height: auto;
+    padding: 0;
+    max-width: 940px;
+    margin: 0 auto;
+  }
+
+  .lmj-nav {
+    justify-content: center;
+    gap: 30px;
+  }
+
+  .lmj-searchbar {
+    height: 42px;
+    margin: 8px auto 4px;
+    max-width: 940px;
+  }
+
+  .lmj-channel {
+    justify-content: center;
+    padding-right: 14px;
+    gap: 30px;
+  }
+
+  .lmj-channel__more {
+    display: none;
+  }
+
+  /* --- 主内容区：不再内部滚动，跟随页面滚动 --- */
+  .lmj-main {
+    overflow: visible;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 24px 40px;
+    background: transparent;
+  }
+
+  /* --- 金刚区：两屏合并为两行六列，隐藏分页圆点 --- */
+  .lmj-cate {
+    padding: 22px 18px 18px;
+    border-radius: var(--lmj-radius-lg);
+    box-shadow: var(--lmj-shadow-card);
+    margin-bottom: 18px;
+  }
+
+  .lmj-cate__track {
+    display: flex;
+    flex-wrap: wrap;
+    overflow: visible;
+    row-gap: 18px;
+  }
+
+  /* 取消「每屏 6 个」的分页包装，让 12 个分类直接排布为两行六列 */
+  .lmj-cate__page {
+    display: contents;
+  }
+
+  .lmj-cate__cell {
+    flex: 0 0 16.6667%;
+  }
+
+  .lmj-cate__icon {
+    width: 54px;
+    height: 54px;
+    font-size: 44px;
+  }
+
+  .lmj-cate__text {
+    font-size: var(--lmj-fs-sm);
+  }
+
+  .lmj-cate__dots {
+    display: none;
+  }
+
+  /* --- 瀑布流：桌面端用 CSS 多列实现真正的错落瀑布流 --- */
+  .lmj-feed {
+    padding: 0;
+  }
+
+  .lmj-feed__cols {
+    display: block;
+    column-count: 3;
+    column-gap: 16px;
+  }
+
+  /* 取消两层 flex 列的包装，让卡片直接参与分栏 */
+  .lmj-feed__col {
+    display: contents;
+  }
+
+  .lmj-card {
+    break-inside: avoid;
+    margin-bottom: 16px;
+    border-radius: 12px;
+  }
+
+  .lmj-card__media {
+    aspect-ratio: var(--lmj-ratio, 1 / 1);
+  }
+
+  .lmj-card__title {
+    font-size: var(--lmj-fs-md);
+  }
+
+  .lmj-card__price {
+    font-size: 20px;
+  }
+
+  .lmj-card__price::before {
+    font-size: var(--lmj-fs-sm);
+  }
+
+  .lmj-card__want,
+  .lmj-card__tagline,
+  .lmj-card__nick,
+  .lmj-card__credit {
+    font-size: var(--lmj-fs-sm);
+  }
+
+  .lmj-card__avatar {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  /* 桌面端悬停效果更明显 */
+  .lmj-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lmj-shadow-float);
+  }
+
+  /* --- 底部 TabBar：吸底居中 --- */
+  .lmj-tabbar {
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .lmj-totop {
+    position: fixed;
+    right: 28px;
+    bottom: 90px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. 大屏（≥1400px）：四列瀑布流
+   -------------------------------------------------------------------------- */
+@media (min-width: 1400px) {
+  .lmj-phone {
+    max-width: 1440px;
+  }
+
+  .lmj-main {
+    max-width: 1360px;
+  }
+
+  .lmj-feed__cols {
+    column-count: 4;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. 超小屏（≤360px）：整体压紧
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+  .lmj-statusbar {
+    padding: 0 12px;
+  }
+
+  .lmj-header__bar {
+    padding: 0 10px;
+  }
+
+  .lmj-nav {
+    gap: 14px;
+  }
+
+  .lmj-nav__item {
+    font-size: 15px;
+  }
+
+  .lmj-nav__item--on {
+    font-size: 18px;
+  }
+
+  .lmj-channel {
+    gap: 18px;
+    padding-left: 10px;
+  }
+
+  .lmj-cate__cell {
+    flex: 0 0 60px;
+  }
+
+  .lmj-cate__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 31px;
+  }
+
+  .lmj-cate__text,
+  .lmj-card__want,
+  .lmj-card__tagline,
+  .lmj-card__nick,
+  .lmj-card__credit {
+    font-size: 9px;
+  }
+
+  .lmj-card__price {
+    font-size: 15px;
+  }
+}

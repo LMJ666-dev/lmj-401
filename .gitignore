@@ -1,7 +1,13 @@
 ﻿node_modules/
 *.log
 .trae/
+.trae-html-share-packages/
+.screenshots/
 .vs/
 bin/
 obj/
 .DS_Store
+*.zip
+新建文件夹/
+12周作业/
+提示词/

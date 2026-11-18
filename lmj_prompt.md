@@ -1,0 +1,130 @@
+﻿# 提示词记录 - 网页开发与设计项目
+
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 设置项目强制规则：1) 所有 CSS 类名、id 名、JS 变量都以 lmj_ 开头；2) 所有提示词在执行前追加写入 lmj_prompt.md，包含时间、模型、提示词内容。
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 设置规则：所有新建的html文件加入超链接入口到首页index.html
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 扫描现有 HTML 文件补齐返回首页超链接
+- **执行结果**: 共 12 个 HTML，修改 10 个（跳过首页自身和独立项目），使用 Edit 工具直接写入 lmj_homeLink 按钮，按层级正确使用相对路径
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 设置规则：所有新建的html文件加入超链接入口到首页index.html（重复确认）
+- **执行结果**: 规则已在本会话内锁定，历史 10 个文件已补齐 lmj_homeLink 入口，本条目为重复确认追加记录
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 使用当前目录下skills文件夹中的frontend-design skill做两个html网页iconfont-1.html、iconfont-2.html，使得页面具有艺术品牌的样式。分别显示 Font Awesome 图标（字体方式）和 Lucide 图标（SVG方式），相关 CDN 文件下载到本目录下的 cdn 目录。
+- **设计方案**:
+  - 主题：艺术品牌「Atelier Icône」，面向设计师与品牌方的图标工作室展示页
+  - iconfont-1.html：Font Awesome 6（字体），配色深墨黑 + 古金 + 雾白，衬线标题 + 无衬线正文，优雅画廊式布局
+  - iconfont-2.html：Lucide（SVG），配色雾白 + 石墨灰 + 青绿点缀，几何感现代布局，图标卡片矩阵
+  - CDN 资源本地化：cdn/fontawesome/ 与 cdn/lucide/
+---
+- **时间**: 2026-11-06
+- **模型**: Trae AI Assistant
+- **提示词**: 补全 swiper-task.html 底部 script 区域内 4 个 Swiper 初始化 TODO 和任务 4 进阶按钮点击切换 effect TODO
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 根据 font 目录中的 iconfont 图标完成移动端的固定的自适应宽度的下导航，导航项目包括 4 个，完成 html 网页的设计，网页名称 iconfont-3.html 和 iconfont-4.html 分别使用字体图标和 svg，包括右上角的数字徽章和红点。
+- **设计方案**:
+  - iconfont-3.html：使用 font/iconfont 图标字体（字体方式），固定底部 4 tab（首页/点赞/购物车/我的），购物车数字徽章，点赞红点
+  - iconfont-4.html：使用 Lucide SVG（SVG 方式），同结构但用 data-lucide 渲染
+  - 整体风格：仿闲鱼 APP 移动端，自适应手机宽度
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 为 iconfont-3 和 iconfont-4 添加首页入口链接
+- **执行结果**: 已存在——两个文件创建时按规则自动插入 lmj_homeLink（iconfont-3 第 191 行、iconfont-4 第 195 行），无需额外修改
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 创建 skill——提交项目：使用 git commit 并 push 到 gitee 仓库；私人令牌 cd6e1e4b57aee7a891b51238d70d5c39；仓库地址 https://gitee.com/neusoft_wangyao_jsj/webprojectlmj.git
+- **执行结果**: 创建 project-scope skill `.trae/skills/git-push-gitee/`，含 SKILL.md 和 scripts/push.ps1，首次运行自动 git init + add remote + commit + push
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 执行 git-push-gitee skill——推送项目到 gitee 仓库
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 修复 embedded git repository——webprojectlmj 子目录本身是 git 仓库，需转成普通目录再推送
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 以后上传到 master 分支
+- **执行结果**: 更新 push.ps1 默认分支为 master；本地 main 重命名为 master；推送到远程 origin/master
+---
+- **时间**: 2026-10-23
+- **模型**: Trae AI Assistant
+- **提示词**: 清理远程旧的 main 分支，只保留 master
+---
+
+- **时间**: 2026-10-30
+- **模型**: Trae AI Assistant
+- **提示词**: 创建 skill——提交到 GitHub，仓库 https://github.com/Bzi-zeyu/baizeyu.git，使用已生成的 SSH 公钥（ed25519），默认 master 分支
+- **执行结果**: SSH 22 端口被防火墙拦截 + hosts 屏蔽 github.com；改用方案 B：HTTPS + Personal Access Token（待用户生成）
+---
+- **时间**: 2026-10-30
+- **模型**: Trae AI Assistant
+- **提示词**: 用户提供 GitHub PAT，填入 push.ps1 并首次推送
+- **执行结果**: 修复中文路径编码（Get-Location）；PAT 推送 403（可能权限不足）；改用 A 方案——管理员改 hosts + HTTPS PAT 再试
+---
+- **时间**: 2026-10-30
+- **模型**: Trae AI Assistant
+- **提示词**: 用户提供新 PAT（ghp_8K3k...），之前旧 PAT 只有 repo_deployment 权限，新的应该有完整 repo scope
+- **执行结果**: 推送成功！GitHub Pages 已 built 但根目录无 index.html → 404；创建根目录重定向 index.html
+---
+- **时间**: 2026-10-30
+- **模型**: Trae AI Assistant
+- **提示词**: GitHub Pages 404，根目录缺 index.html，创建重定向页并推送
+---
+- **时间**: 2026-11-04
+- **模型**: GLM-5.3-Flash
+- **提示词**: 修改规则文件 AGENTS.md，在新建html文件时加入注释，注释包括：梁铭巨，建立时间，使用大模型，功能名称。在js部分函数加上函数主要实现功能的注释。
+- **执行结果**: 已在 AGENTS.md「强制项目规则」中新增两条注释规范：新建 HTML 文件需加作者（梁铭巨）、建立时间、使用大模型、功能名称的注释；JS 函数需加功能说明注释
+---
+- **时间**: 2026-11-04
+- **模型**: GLM-5.3-Flash
+- **提示词**: 创建 tab 选项卡 HTML 页面：国内新闻（默认）、省内新闻、国际新闻、最热新闻；JS 放 js 文件夹外部引用；tab 选项卡 JS 可复用；监听事件先清除所有选中状态再设置当前元素选中状态。
+- **执行结果**: 新建 tab-news.html + js/tab-news.js（可复用 lmj_initTabs 组件，先清空后选中逻辑）
+---
+- **时间**: 2026-11-11
+- **模型**: DeepSeek-V4.1-Flash
+- **提示词**: 按截图要求完成第三次课作业：任务一（两轮提示词 + 逐项验证 + 答辩记录）、任务二（新增 creative 电影墙第 7 个按钮与 creativeEffect）、任务三（AI 生成爱达·魔都号 16:9 图片并加入四个演示、增加 keyboard 键盘控制），把提示词入口接入首页与作业页，最后提交到 GitHub。
+- **执行结果**: 修改 swiper-task.html（初始 cube、6 件展品、7 个效果按钮、keyboard）；新建 swiper-homework.html 提示词与答辩记录页；24002120401-梁铭巨/index.html 增加两个入口；生成 swiper-imgs/aida_modu_1.jpg
+---
+
+- **时间**: 2026-11-11
+- **模型**: DeepSeek-V4.1-Flash
+- **提示词**: 需要加进去一点自己的东西，就相当于防伪标识
+- **执行结果**: swiper-task.html 与 swiper-homework.html 增加右下角红色个人印章（梁铭巨 · 24002120401）、统一防伪码 lmj-401-20261111、页脚署名、body data-author 属性、HTML 注释与控制台签名；swiper-homework.html 增加个人签名/防伪声明区
+---
+- **时间**: 2026-11-13
+- **模型**: Trae AI Assistant
+- **提示词**: 在当前目录的 db 文件夹下面执行 npm init -y
+- **执行结果**: 成功在 db/ 目录下创建 package.json，默认配置 name: db, version: 1.0.0, type: commonjs
+---
+- **时间**: 2026-11-13
+- **模型**: Trae AI Assistant
+- **提示词**: 新建 HTML 显示上图下文结构，图片和文字从本地 Node.js 服务器（端口 3004）获取 db/db.json 的 poems 数组中的 title、content、pic；server.js 放在 db 文件夹中
+- **执行结果**: 创建 db/server.js（http 模块，端口 3004，/api/poems 接口，支持 CORS）和 poems.html（上图下文卡片网格，fetch 渲染）；接口测试通过，返回 4 首诗词
+---
+- **时间**: 2026-11-13
+- **模型**: Trae AI Assistant
+- **提示词**: 查看所有文件，把所有缩写 bzy 改成 lmj
+- **执行结果**: 三轮 PowerShell 批量替换（第一轮遗漏 + 大小写 bug 修复第二轮 + 大写 LMJ→小写 lmj 第三轮），共修改文件 26 个、重命名文件 4 个、重命名目录 2 个。最终验证：无 bzy 残留、无大写 LMJ 残留。浏览器实测 4 个核心页面：swiper-task.html ✅（0 error）、poems.html ✅（数据服务器重启后正常显示 4 首诗，Gitee 远程图片因防盗链加载失败非替换问题）、responsive.html ✅（lmj-*.css 三个改名文件全部正确加载，0 error/0 404）
+---
+- **时间**: 2026-11-18
+- **模型**: Trae AI Assistant
+- **提示词**: 读取 https://spontaneous-valkyrie-4e4229.netlify.app/mobile-events-lesson 网页中的任务并完成
+- **执行结果**: 完成任务二/三/四——mobile-gesture.html（左右滑切换 4 张美食卡片，阈值 40px + 300ms 冷却 + 边界提示）、mobile-zoom.html（双指缩放以两指中点为基准，1~4x + 双击 1x↔2x + 放大后拖动 + 边界回弹）、mobile-sensor.html（devicemotion accelerationIncludingGravity 阈值 18 + 1.5s 冷却 + iOS 权限请求 + 设备不支持时按钮降级）。浏览器实测三页均 0 error / 0 404
+

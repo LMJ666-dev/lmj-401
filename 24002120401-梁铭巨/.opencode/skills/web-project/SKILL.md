@@ -1,4 +1,4 @@
----
+﻿---
 name: web-project
 description: 项目技能。用于 24002120401-梁铭巨 的《高级网页设计》课堂实践项目（index.html / review-flex.html / svg.html / css / font）。当需要了解、修改、重构或继续开发该网页项目，或需要在浏览器中预览页面、调整 CSS 布局（flex 布局、SVG 绘图、iconfont 字体图标）时使用。
 ---
@@ -10,7 +10,7 @@ description: 项目技能。用于 24002120401-梁铭巨 的《高级网页设�
 ## 项目结构
 
 ```
-webprojectbzy/
+webprojectlmj/
 ├── index.html          # 主页面：课堂实践索引与 flex 布局练习
 ├── review-flex.html    # Flex 布局复习页
 ├── svg.html            # SVG 矢量图形练习页

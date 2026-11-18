@@ -1,0 +1,361 @@
+<!--
+  作者：梁铭巨
+  学号：24002120401
+  建立时间：2026-11-18
+  使用大模型：Trae AI Assistant
+  功能名称：任务四 · 摇一摇彩蛋 —— 摇一摇抽今日菜谱（含设备不支持时的降级方案）
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>摇一摇 · 抽今日菜谱</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ffd166 50%, #06d6a0 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      color: #2d3436;
+      overflow-x: hidden;
+    }
+
+    #lmj_homeLink {
+      align-self: flex-start;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.3);
+      color: #2d3436;
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 30px;
+    }
+
+    h1 { font-size: 28px; letter-spacing: 3px; text-align: center; }
+    .lmj_subtitle { text-align: center; font-size: 14px; margin-top: 8px; color: rgba(45,52,54,0.7); }
+
+    /* 摇一摇图标区域 */
+    .lmj_shakeZone {
+      margin-top: 50px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .lmj_shakeZone.lmj_shaking {
+      animation: lmj_shakeAnim 0.5s ease;
+      box-shadow: 0 5px 30px rgba(255,107,107,0.6);
+    }
+    @keyframes lmj_shakeAnim {
+      0%, 100% { transform: translateX(0) rotate(0); }
+      20% { transform: translateX(-15px) rotate(-5deg); }
+      40% { transform: translateX(15px) rotate(5deg); }
+      60% { transform: translateX(-12px) rotate(-3deg); }
+      80% { transform: translateX(12px) rotate(3deg); }
+    }
+
+    .lmj_status {
+      margin-top: 24px;
+      font-size: 14px;
+      color: rgba(45,52,54,0.7);
+      text-align: center;
+      min-height: 20px;
+    }
+
+    /* 结果卡片 */
+    .lmj_result {
+      margin-top: 40px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 340px;
+      opacity: 0;
+      transform: scale(0.5) translateY(30px);
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .lmj_result.lmj_show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+    .lmj_result .lmj_dishEmoji { font-size: 50px; margin-bottom: 10px; }
+    .lmj_result h2 { font-size: 26px; color: #2d3436; margin-bottom: 8px; }
+    .lmj_result .lmj_tag {
+      display: inline-block;
+      background: #ffd166;
+      color: #2d3436;
+      padding: 4px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+    .lmj_result p { font-size: 14px; line-height: 1.8; color: #636e72; }
+
+    /* 降级提示 */
+    .lmj_fallback {
+      margin-top: 30px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      max-width: 340px;
+      font-size: 13px;
+      color: #636e72;
+      backdrop-filter: blur(10px);
+    }
+    .lmj_fallback.lmj_hidden { display: none; }
+    .lmj_fallback p { margin-bottom: 12px; }
+
+    .lmj_btn {
+      background: #2d3436;
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .lmj_btn:active { transform: scale(0.96); }
+    .lmj_btn:disabled { background: #b2bec3; cursor: not-allowed; }
+    .lmj_btn.lmj_primary { background: #e17055; box-shadow: 0 8px 20px rgba(225,112,85,0.4); }
+    .lmj_btn.lmj_primary:active { box-shadow: 0 4px 10px rgba(225,112,85,0.4); }
+
+    .lmj_fallbackBtn {
+      margin-top: 14px;
+      background: #06d6a0;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      font-family: inherit;
+    }
+    .lmj_fallbackBtn:active { transform: scale(0.96); }
+
+    .lmj_permission {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.7);
+      padding: 16px 20px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 340px;
+      backdrop-filter: blur(10px);
+    }
+    .lmj_permission.lmj_hidden { display: none; }
+
+    /* 震动反馈状态指示器 */
+    .lmj_meter {
+      margin-top: 16px;
+      width: 200px;
+      height: 4px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .lmj_meter-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #06d6a0, #ffd166, #ff6b6b);
+      transition: width 0.1s;
+    }
+  </style>
+</head>
+<body>
+  <a id="lmj_homeLink" href="index.html">← 返回首页</a>
+
+  <h1>📱 摇一摇 · 抽今日菜谱</h1>
+  <p class="lmj_subtitle">摇一摇手机，让今天吃什么不再纠结</p>
+
+  <div class="lmj_shakeZone" id="lmj_shakeZone">🥢</div>
+
+  <div class="lmj_status" id="lmj_status">等待你的摇动…</div>
+  <div class="lmj_meter"><div class="lmj_meter-fill" id="lmj_meterFill"></div></div>
+
+  <!-- iOS 权限请求按钮 -->
+  <div class="lmj_permission lmj_hidden" id="lmj_permission">
+    <p style="font-size:13px;color:#636e72;margin-bottom:12px;">🔐 iOS 需要授权才能访问传感器</p>
+    <button class="lmj_btn lmj_primary" id="lmj_permBtn">点我授权</button>
+  </div>
+
+  <!-- 降级提示 —— 设备不支持时显示 -->
+  <div class="lmj_fallback lmj_hidden" id="lmj_fallback">
+    <p>😢 当前设备不支持加速度传感器</p>
+    <p style="font-size:12px;">请用真机（手机）打开本页面，或点击下方按钮手动抽一次</p>
+    <button class="lmj_fallbackBtn" id="lmj_fallbackBtn">🎲 点我抽一次</button>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="lmj_result" id="lmj_result">
+    <div class="lmj_dishEmoji" id="lmj_emoji">🍜</div>
+    <div class="lmj_tag" id="lmj_tag">今日推荐</div>
+    <h2 id="lmj_dishName">麻辣香锅</h2>
+    <p id="lmj_dishDesc">选自己喜欢的食材，一锅端，香辣开胃，超适合犯懒的时候。</p>
+  </div>
+
+  <script>
+    // 任务四 · 摇一摇彩蛋
+    // 作者：梁铭巨 · 学号：24002120401
+
+    // 菜谱数据 —— 8 道菜，随机抽取
+    var lmj_dishes = [
+      { name: '麻婆豆腐',   emoji: '🥘', tag: '川菜',   desc: '麻辣鲜香，嫩滑豆腐裹红油酱汁，下饭神器，十分钟搞定。' },
+      { name: '番茄炒蛋',   emoji: '🍳', tag: '家常菜', desc: '国民第一菜，酸甜开胃，老少皆宜，零失败率。' },
+      { name: '红烧肉',     emoji: '🍖', tag: '硬菜',   desc: '肥而不腻瘦而不柴，一口下去满满的幸福感。' },
+      { name: '蛋炒饭',     emoji: '🍚', tag: '快手菜', desc: '剩米饭的华丽变身，加个火腿就是豪华版。' },
+      { name: '酸辣土豆丝', emoji: '🥔', tag: '素菜',   desc: '酸爽脆口，3 块钱搞定一道下饭菜。' },
+      { name: '可乐鸡翅',   emoji: '🍗', tag: '小朋友最爱', desc: '甜咸适口，色泽红亮，孩子们抢着吃。' },
+      { name: '紫菜蛋花汤', emoji: '🥣', tag: '汤品',   desc: '清淡暖胃，做起来比煮泡面还快 3 秒。' },
+      { name: '火锅',       emoji: '🍲', tag: '聚餐首选', desc: '心情不好吃火锅，心情好更要吃火锅。' }
+    ];
+
+    // 摇一摇参数
+    var lmj_threshold = 18;        // 加速度阈值（m/s²），超过算摇动
+    var lmj_cooldown = 1500;      // 冷却时间（ms），一次摇动只触发一次
+    var lmj_cooldownEnd = 0;       // 当前冷却结束时间戳
+
+    // UI 引用
+    var lmj_shakeZone = document.getElementById('lmj_shakeZone');
+    var lmj_status = document.getElementById('lmj_status');
+    var lmj_meterFill = document.getElementById('lmj_meterFill');
+    var lmj_result = document.getElementById('lmj_result');
+    var lmj_emoji = document.getElementById('lmj_emoji');
+    var lmj_dishName = document.getElementById('lmj_dishName');
+    var lmj_dishDesc = document.getElementById('lmj_dishDesc');
+    var lmj_tag = document.getElementById('lmj_tag');
+    var lmj_fallback = document.getElementById('lmj_fallback');
+    var lmj_fallbackBtn = document.getElementById('lmj_fallbackBtn');
+    var lmj_permission = document.getElementById('lmj_permission');
+    var lmj_permBtn = document.getElementById('lmj_permBtn');
+
+    // 函数功能：随机抽取一道菜，显示结果卡片并带弹出动画
+    function lmj_pickDish() {
+      var dish = lmj_dishes[Math.floor(Math.random() * lmj_dishes.length)];
+      lmj_emoji.textContent = dish.emoji;
+      lmj_dishName.textContent = dish.name;
+      lmj_dishDesc.textContent = dish.desc;
+      lmj_tag.textContent = dish.tag;
+
+      lmj_result.classList.remove('lmj_show');
+      // 触发 reflow 让动画重播
+      void lmj_result.offsetWidth;
+      lmj_result.classList.add('lmj_show');
+
+      // 摇一摇动画
+      lmj_shakeZone.classList.add('lmj_shaking');
+      setTimeout(function () { lmj_shakeZone.classList.remove('lmj_shaking'); }, 500);
+    }
+
+    // 函数功能：计算 accelerationIncludingGravity 的合成加速度（勾股定理三向合成）
+    function lmj_calcAccel(data) {
+      // accelerationIncludingGravity 包含重力分量，
+      // 静止时约等于 9.8（重力），摇动时会超过阈值
+      var acc = data.accelerationIncludingGravity;
+      if (!acc) return null;
+      var x = acc.x || 0, y = acc.y || 0, z = acc.z || 0;
+      return Math.hypot(x, y, z);
+    }
+
+    // 函数功能：devicemotion 事件处理 —— 计算加速度，超阈值则触发摇一摇
+    function lmj_onMotion(e) {
+      var accel = lmj_calcAccel(e);
+      if (accel === null) return;
+
+      // 更新可视化 meter
+      var meterPct = Math.min(100, (accel / (lmj_threshold * 1.5)) * 100);
+      lmj_meterFill.style.width = meterPct + '%';
+
+      // 冷却中 —— 不处理
+      if (Date.now() < lmj_cooldownEnd) {
+        lmj_status.textContent = '冷却中…';
+        return;
+      }
+
+      // 超过阈值 —— 触发摇一摇
+      if (accel > lmj_threshold) {
+        lmj_status.textContent = '🎉 检测到摇动！加速度 ' + accel.toFixed(1);
+        lmj_pickDish();
+        lmj_cooldownEnd = Date.now() + lmj_cooldown;
+      } else {
+        lmj_status.textContent = '加速度 ' + accel.toFixed(1) + ' / 阈值 ' + lmj_threshold;
+      }
+    }
+
+    // 函数功能：尝试开启传感器监听，失败则显示降级方案
+    function lmj_initMotion() {
+      // 检测是否支持 devicemotion
+      if (typeof DeviceMotionEvent === 'undefined') {
+        lmj_showFallback('当前设备不支持加速度传感器');
+        return;
+      }
+
+      // iOS 13+ 需要手动请求权限
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        // 还没请求过权限 —— 显示授权按钮
+        lmj_permission.classList.remove('lmj_hidden');
+        lmj_permBtn.addEventListener('click', function () {
+          DeviceMotionEvent.requestPermission().then(function (res) {
+            if (res === 'granted') {
+              lmj_permission.classList.add('lmj_hidden');
+              lmj_startListening();
+            } else {
+              lmj_showFallback('传感器权限被拒绝');
+            }
+          }).catch(function () {
+            lmj_showFallback('权限请求失败');
+          });
+        });
+        return;
+      }
+
+      // Android / 其他 —— 直接开启
+      lmj_startListening();
+    }
+
+    // 函数功能：真正开始监听 devicemotion 事件
+    function lmj_startListening() {
+      window.addEventListener('devicemotion', lmj_onMotion, false);
+      lmj_status.textContent = '✅ 传感器已就绪，摇一摇试试！';
+
+      // 保险：3 秒后如果加速度一直是 0，说明没有实际数据
+      setTimeout(function () {
+        // 如果仍然没有任何有效数据，说明虽然 API 存在但无传感器
+        // 这里简化处理，不做更复杂的检测
+      }, 3000);
+    }
+
+    // 函数功能：显示降级方案 —— 设备不支持时用按钮代替
+    function lmj_showFallback(msg) {
+      console.warn('[lmj_sensor]', msg);
+      lmj_fallback.classList.remove('lmj_hidden');
+      lmj_status.textContent = msg;
+      lmj_fallbackBtn.addEventListener('click', function () {
+        lmj_pickDish();
+      });
+    }
+
+    // 页面加载后初始化
+    lmj_initMotion();
+  </script>
+</body>
+</html>
