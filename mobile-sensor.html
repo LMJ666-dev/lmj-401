@@ -3,359 +3,392 @@
   学号：24002120401
   建立时间：2026-11-18
   使用大模型：Trae AI Assistant
-  功能名称：任务四 · 摇一摇彩蛋 —— 摇一摇抽今日菜谱（含设备不支持时的降级方案）
+  功能名称：任务四 · 摇一摇彩蛋 —— 抽今日菜谱
+           验收①冷却1.5s  验收②无传感器降级  验收③iOS按钮授权  验收④讲清 acceleration 区别
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>摇一摇 · 抽今日菜谱</title>
+  <title>任务四 · 摇一摇抽菜谱</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: "PingFang SC", "Microsoft YaHei", serif;
       min-height: 100vh;
       background: linear-gradient(135deg, #ff6b6b 0%, #ffd166 50%, #06d6a0 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px 20px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 16px 40px;
       color: #2d3436;
-      overflow-x: hidden;
     }
-
     #lmj_homeLink {
       align-self: flex-start;
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.3);
-      color: #2d3436;
-      text-decoration: none;
-      border-radius: 20px;
-      font-size: 13px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.3); color: #2d3436;
+      text-decoration: none; border-radius: 20px; font-size: 12px;
+      border: 1px solid rgba(0,0,0,0.1); margin-bottom: 20px;
+    }
+    h1 { font-size: 22px; letter-spacing: 2px; text-align: center; }
+    .lmj_sub { font-size: 12px; color: rgba(45,52,54,0.6); margin-top: 6px; text-align: center; }
+
+    /* ===== 验收可视化面板 ===== */
+    .lmj_accept {
+      max-width: 360px; width: 100%; margin: 16px auto 0;
+      background: rgba(255,255,255,0.85);
       backdrop-filter: blur(10px);
-      margin-bottom: 30px;
+      border-radius: 12px; padding: 12px 14px;
+      font-size: 11px; line-height: 1.7;
+      color: #2d3436;
+    }
+    .lmj_accept h3 { font-size: 12px; color: #ef476f; margin-bottom: 6px; letter-spacing: 1px; }
+    .lmj_accept-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 2px 0; color: #2d3436;
+    }
+    .lmj_accept-row b { color: #06d6a0; font-weight: normal; }
+    .lmj_accept-row code {
+      background: rgba(0,0,0,0.08); padding: 1px 5px;
+      border-radius: 3px; font-size: 10px; font-family: Consolas, monospace;
     }
 
-    h1 { font-size: 28px; letter-spacing: 3px; text-align: center; }
-    .lmj_subtitle { text-align: center; font-size: 14px; margin-top: 8px; color: rgba(45,52,54,0.7); }
+    /* 加速度 meter（实时可视化） */
+    .lmj_acc-meter {
+      background: rgba(0,0,0,0.08);
+      height: 6px; border-radius: 3px; overflow: hidden; margin-top: 4px;
+    }
+    .lmj_acc-fill {
+      height: 100%; width: 0; transition: width 0.05s linear;
+      background: linear-gradient(90deg, #06d6a0, #ffd166, #ef476f);
+    }
 
-    /* 摇一摇图标区域 */
-    .lmj_shakeZone {
-      margin-top: 50px;
-      width: 200px; height: 200px;
+    /* 冷却条（验收①） */
+    .lmj_cd-row {
+      display: flex; align-items: center; gap: 8px; margin-top: 4px;
+    }
+    .lmj_cd-bar {
+      flex: 1; height: 4px; background: rgba(0,0,0,0.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    .lmj_cd-fill { height: 100%; width: 100%; background: #06d6a0; transition: width 0.05s linear; }
+
+    /* 验收④ accelerationIncludingGravity 与 acceleration 区别说明 */
+    .lmj_acc-diff {
+      margin-top: 8px; padding: 8px 12px;
+      background: rgba(0,0,0,0.05); border-radius: 6px;
+      font-size: 10px; color: #2d3436; line-height: 1.6;
+    }
+    .lmj_acc-diff code { background: rgba(0,0,0,0.08); padding: 0 3px; border-radius: 2px; }
+
+    /* ===== 摇一摇图标 ===== */
+    .lmj_shake {
+      margin-top: 20px;
+      width: 160px; height: 160px;
       border-radius: 50%;
       background: rgba(255,255,255,0.6);
       backdrop-filter: blur(20px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 60px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 50px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .lmj_shakeZone.lmj_shaking {
-      animation: lmj_shakeAnim 0.5s ease;
-      box-shadow: 0 5px 30px rgba(255,107,107,0.6);
-    }
+    .lmj_shake.lmj_shaking { animation: lmj_shakeAnim 0.6s ease; }
     @keyframes lmj_shakeAnim {
       0%, 100% { transform: translateX(0) rotate(0); }
-      20% { transform: translateX(-15px) rotate(-5deg); }
-      40% { transform: translateX(15px) rotate(5deg); }
-      60% { transform: translateX(-12px) rotate(-3deg); }
-      80% { transform: translateX(12px) rotate(3deg); }
+      20% { transform: translateX(-18px) rotate(-6deg); }
+      40% { transform: translateX(18px) rotate(6deg); }
+      60% { transform: translateX(-14px) rotate(-4deg); }
+      80% { transform: translateX(14px) rotate(4deg); }
     }
 
     .lmj_status {
-      margin-top: 24px;
-      font-size: 14px;
-      color: rgba(45,52,54,0.7);
-      text-align: center;
-      min-height: 20px;
+      margin-top: 14px; font-size: 13px;
+      color: rgba(45,52,54,0.8); text-align: center;
     }
 
-    /* 结果卡片 */
+    /* ===== 验收③ iOS 权限按钮 ===== */
+    .lmj_perm {
+      margin-top: 14px; display: none;
+      background: #fff; padding: 14px 20px; border-radius: 10px;
+      max-width: 340px; text-align: center;
+    }
+    .lmj_perm.lmj_show { display: block; }
+    .lmj_perm p { font-size: 12px; color: #636e72; margin-bottom: 10px; }
+    .lmj_perm button {
+      background: #e17055; color: #fff; border: none;
+      padding: 10px 24px; border-radius: 20px; font-size: 13px;
+      cursor: pointer; font-family: inherit; letter-spacing: 2px;
+    }
+
+    /* ===== 验收② 降级方案 ===== */
+    .lmj_fallback {
+      margin-top: 14px; display: none;
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px; padding: 18px 20px;
+      max-width: 340px; text-align: center;
+    }
+    .lmj_fallback.lmj_show { display: block; }
+    .lmj_fallback p { font-size: 12px; color: #636e72; margin-bottom: 10px; line-height: 1.7; }
+    .lmj_fallback button {
+      background: #06d6a0; color: #fff; border: none;
+      padding: 10px 28px; border-radius: 22px; font-size: 13px;
+      cursor: pointer; font-family: inherit; letter-spacing: 2px;
+    }
+
+    /* ===== 结果卡片 ===== */
     .lmj_result {
-      margin-top: 40px;
-      background: #fff;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      margin-top: 24px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 14px; padding: 22px 26px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
       text-align: center;
-      width: 100%;
-      max-width: 340px;
-      opacity: 0;
-      transform: scale(0.5) translateY(30px);
-      pointer-events: none;
+      max-width: 360px; width: 100%;
+      opacity: 0; transform: scale(0.7) translateY(20px);
       transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .lmj_result.lmj_show {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      pointer-events: auto;
-    }
-    .lmj_result .lmj_dishEmoji { font-size: 50px; margin-bottom: 10px; }
-    .lmj_result h2 { font-size: 26px; color: #2d3436; margin-bottom: 8px; }
+    .lmj_result.lmj_show { opacity: 1; transform: scale(1) translateY(0); }
+    .lmj_result .lmj_emoji { font-size: 48px; margin-bottom: 6px; }
     .lmj_result .lmj_tag {
-      display: inline-block;
-      background: #ffd166;
-      color: #2d3436;
-      padding: 4px 14px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-bottom: 14px;
+      display: inline-block; background: #ffd166; color: #2d3436;
+      padding: 3px 12px; border-radius: 10px; font-size: 11px; margin-bottom: 10px;
     }
-    .lmj_result p { font-size: 14px; line-height: 1.8; color: #636e72; }
+    .lmj_result h2 { font-size: 22px; color: #2d3436; margin-bottom: 8px; }
+    .lmj_result p  { font-size: 13px; color: #636e72; line-height: 1.8; }
 
-    /* 降级提示 */
-    .lmj_fallback {
-      margin-top: 30px;
-      background: rgba(255,255,255,0.7);
-      border-radius: 16px;
-      padding: 20px;
-      text-align: center;
-      max-width: 340px;
-      font-size: 13px;
-      color: #636e72;
-      backdrop-filter: blur(10px);
-    }
-    .lmj_fallback.lmj_hidden { display: none; }
-    .lmj_fallback p { margin-bottom: 12px; }
-
-    .lmj_btn {
-      background: #2d3436;
-      color: #fff;
-      border: none;
-      padding: 12px 28px;
-      border-radius: 24px;
-      font-size: 15px;
-      cursor: pointer;
-      letter-spacing: 2px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      font-family: inherit;
-    }
-    .lmj_btn:active { transform: scale(0.96); }
-    .lmj_btn:disabled { background: #b2bec3; cursor: not-allowed; }
-    .lmj_btn.lmj_primary { background: #e17055; box-shadow: 0 8px 20px rgba(225,112,85,0.4); }
-    .lmj_btn.lmj_primary:active { box-shadow: 0 4px 10px rgba(225,112,85,0.4); }
-
-    .lmj_fallbackBtn {
-      margin-top: 14px;
-      background: #06d6a0;
-      color: #fff;
-      border: none;
-      padding: 12px 32px;
-      border-radius: 24px;
-      font-size: 15px;
-      cursor: pointer;
-      letter-spacing: 2px;
-      font-family: inherit;
-    }
-    .lmj_fallbackBtn:active { transform: scale(0.96); }
-
-    .lmj_permission {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.7);
-      padding: 16px 20px;
-      border-radius: 16px;
-      text-align: center;
-      max-width: 340px;
-      backdrop-filter: blur(10px);
-    }
-    .lmj_permission.lmj_hidden { display: none; }
-
-    /* 震动反馈状态指示器 */
-    .lmj_meter {
+    /* ===== 降级说明（为什么必须做降级）===== */
+    .lmj_why {
       margin-top: 16px;
-      width: 200px;
-      height: 4px;
-      background: rgba(255,255,255,0.5);
-      border-radius: 2px;
-      overflow: hidden;
+      background: rgba(255,255,255,0.6);
+      border-radius: 10px; padding: 12px 14px;
+      max-width: 360px; font-size: 11px; line-height: 1.7;
+      color: #2d3436;
     }
-    .lmj_meter-fill {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, #06d6a0, #ffd166, #ff6b6b);
-      transition: width 0.1s;
-    }
+    .lmj_why h4 { font-size: 12px; color: #ef476f; margin-bottom: 4px; }
   </style>
 </head>
 <body>
   <a id="lmj_homeLink" href="index.html">← 返回首页</a>
 
   <h1>📱 摇一摇 · 抽今日菜谱</h1>
-  <p class="lmj_subtitle">摇一摇手机，让今天吃什么不再纠结</p>
+  <p class="lmj_sub">验收①冷却1.5s　验收②无传感器降级　验收③iOS按钮授权　验收④acceleration 区别</p>
 
-  <div class="lmj_shakeZone" id="lmj_shakeZone">🥢</div>
+  <!-- 验收点可视化面板 -->
+  <div class="lmj_accept">
+    <h3>🛠️ 验收点实时读数</h3>
 
-  <div class="lmj_status" id="lmj_status">等待你的摇动…</div>
-  <div class="lmj_meter"><div class="lmj_meter-fill" id="lmj_meterFill"></div></div>
+    <div class="lmj_accept-row">
+      <span>实时加速度</span>
+      <span><b id="lmj_accText">— m/s²</b></span>
+    </div>
+    <div class="lmj_acc-meter">
+      <div class="lmj_acc-fill" id="lmj_accFill"></div>
+    </div>
+    <div style="font-size:9px;color:rgba(0,0,0,0.35);margin-top:2px;">
+      阈值线 ─────────── 18 m/s² ─────────── 超过触发
+    </div>
 
-  <!-- iOS 权限请求按钮 -->
-  <div class="lmj_permission lmj_hidden" id="lmj_permission">
-    <p style="font-size:13px;color:#636e72;margin-bottom:12px;">🔐 iOS 需要授权才能访问传感器</p>
-    <button class="lmj_btn lmj_primary" id="lmj_permBtn">点我授权</button>
+    <div class="lmj_accept-row" style="margin-top:8px;">
+      <span>验收① 冷却 1.5s</span>
+      <span id="lmj_cdText"><b style="color:#06d6a0;">就绪</b></span>
+    </div>
+    <div class="lmj_cd-row">
+      <div class="lmj_cd-bar"><div class="lmj_cd-fill" id="lmj_cdFill"></div></div>
+    </div>
+
+    <div class="lmj_accept-row" style="margin-top:6px;">
+      <span>验收② 传感器状态</span>
+      <span id="lmj_sensorText"><b>检测中…</b></span>
+    </div>
+
+    <div class="lmj_accept-row">
+      <span>验收③ iOS 权限</span>
+      <span id="lmj_permText"><b>—</b></span>
+    </div>
+
+    <!-- 验收④：加速度区别说明 -->
+    <div class="lmj_acc-diff">
+      <b style="color:#ef476f;">验收④ 答辩准备 —— 两个 acceleration 的区别</b><br>
+      • <code>accelerationIncludingGravity</code> —— <b>含重力</b>，静止时 ≈ 9.8（设备平放），摇动时叠加起来 > 18 好判断<br>
+      • <code>acceleration</code> —— <b>去掉重力</b>，静止时 ≈ 0，需要低通滤波才能用<br>
+      我们用 <code>accelerationIncludingGravity</code> + 阈值 18，<b>更简单、更稳定</b>
+    </div>
   </div>
 
-  <!-- 降级提示 —— 设备不支持时显示 -->
-  <div class="lmj_fallback lmj_hidden" id="lmj_fallback">
-    <p>😢 当前设备不支持加速度传感器</p>
-    <p style="font-size:12px;">请用真机（手机）打开本页面，或点击下方按钮手动抽一次</p>
-    <button class="lmj_fallbackBtn" id="lmj_fallbackBtn">🎲 点我抽一次</button>
+  <!-- 摇一摇 -->
+  <div class="lmj_shake" id="lmj_shake">🥢</div>
+  <div class="lmj_status" id="lmj_status">等待你的摇动…</div>
+
+  <!-- 验收③ iOS 权限按钮 -->
+  <div class="lmj_perm" id="lmj_perm">
+    <p>🔐 iOS 需要授权才能访问传感器（验收③）</p>
+    <button id="lmj_permBtn">点我授权</button>
+  </div>
+
+  <!-- 验收② 降级方案 -->
+  <div class="lmj_fallback" id="lmj_fallback">
+    <p>😢 当前设备不支持加速度传感器<br>
+       （验收②：已触发降级，不报错不白屏）</p>
+    <button id="lmj_fallbackBtn">🎲 点我抽一次</button>
   </div>
 
   <!-- 结果卡片 -->
   <div class="lmj_result" id="lmj_result">
-    <div class="lmj_dishEmoji" id="lmj_emoji">🍜</div>
+    <div class="lmj_emoji" id="lmj_emoji">🍜</div>
     <div class="lmj_tag" id="lmj_tag">今日推荐</div>
-    <h2 id="lmj_dishName">麻辣香锅</h2>
-    <p id="lmj_dishDesc">选自己喜欢的食材，一锅端，香辣开胃，超适合犯懒的时候。</p>
+    <h2 id="lmj_name">麻辣香锅</h2>
+    <p id="lmj_desc">选自己喜欢的食材，一锅端，香辣开胃。</p>
+  </div>
+
+  <!-- 降级说明 -->
+  <div class="lmj_why">
+    <h4>🧠 为什么必须做降级？</h4>
+    1. 桌面浏览器（Chrome/Edge）没有加速度传感器，<code>devicemotion</code> 事件永远不会触发<br>
+    2. iOS 13+ 需要用户主动点按钮授权，不授权就收不到数据<br>
+    3. 老款 Android 或低配设备可能没有传感器<br>
+    结论：任何依赖硬件的功能都必须有降级方案，<b>否则用户看到的就是一片空白</b>
   </div>
 
   <script>
-    // 任务四 · 摇一摇彩蛋
-    // 作者：梁铭巨 · 学号：24002120401
-
-    // 菜谱数据 —— 8 道菜，随机抽取
+    // 任务四：摇一摇彩蛋
     var lmj_dishes = [
-      { name: '麻婆豆腐',   emoji: '🥘', tag: '川菜',   desc: '麻辣鲜香，嫩滑豆腐裹红油酱汁，下饭神器，十分钟搞定。' },
-      { name: '番茄炒蛋',   emoji: '🍳', tag: '家常菜', desc: '国民第一菜，酸甜开胃，老少皆宜，零失败率。' },
-      { name: '红烧肉',     emoji: '🍖', tag: '硬菜',   desc: '肥而不腻瘦而不柴，一口下去满满的幸福感。' },
-      { name: '蛋炒饭',     emoji: '🍚', tag: '快手菜', desc: '剩米饭的华丽变身，加个火腿就是豪华版。' },
-      { name: '酸辣土豆丝', emoji: '🥔', tag: '素菜',   desc: '酸爽脆口，3 块钱搞定一道下饭菜。' },
-      { name: '可乐鸡翅',   emoji: '🍗', tag: '小朋友最爱', desc: '甜咸适口，色泽红亮，孩子们抢着吃。' },
-      { name: '紫菜蛋花汤', emoji: '🥣', tag: '汤品',   desc: '清淡暖胃，做起来比煮泡面还快 3 秒。' },
+      { name: '麻婆豆腐',   emoji: '🥘', tag: '川菜', desc: '麻辣鲜香，嫩滑豆腐裹红油酱汁，下饭神器。' },
+      { name: '番茄炒蛋',   emoji: '🍳', tag: '家常菜', desc: '国民第一菜，酸甜开胃，零失败率。' },
+      { name: '红烧肉',     emoji: '🍖', tag: '硬菜', desc: '肥而不腻瘦而不柴，一口满满的幸福感。' },
+      { name: '蛋炒饭',     emoji: '🍚', tag: '快手菜', desc: '剩米饭的华丽变身，加火腿就是豪华版。' },
+      { name: '酸辣土豆丝', emoji: '🥔', tag: '素菜', desc: '酸爽脆口，3 块钱搞定一道下饭菜。' },
+      { name: '可乐鸡翅',   emoji: '🍗', tag: '小朋友最爱', desc: '甜咸适口，色泽红亮，抢着吃。' },
+      { name: '紫菜蛋花汤', emoji: '🥣', tag: '汤品', desc: '清淡暖胃，比泡泡面还快。' },
       { name: '火锅',       emoji: '🍲', tag: '聚餐首选', desc: '心情不好吃火锅，心情好更要吃火锅。' }
     ];
 
-    // 摇一摇参数
-    var lmj_threshold = 18;        // 加速度阈值（m/s²），超过算摇动
-    var lmj_cooldown = 1500;      // 冷却时间（ms），一次摇动只触发一次
-    var lmj_cooldownEnd = 0;       // 当前冷却结束时间戳
+    var lmj_THRESHOLD = 18;       // 验收①阈值
+    var lmj_COOLDOWN  = 1500;    // 验收①冷却
+    var lmj_cd_end = 0;
+    var lmj_cd_tick = null;
 
-    // UI 引用
-    var lmj_shakeZone = document.getElementById('lmj_shakeZone');
+    // UI
+    var lmj_shake = document.getElementById('lmj_shake');
     var lmj_status = document.getElementById('lmj_status');
-    var lmj_meterFill = document.getElementById('lmj_meterFill');
+    var lmj_accText = document.getElementById('lmj_accText');
+    var lmj_accFill = document.getElementById('lmj_accFill');
+    var lmj_cdText = document.getElementById('lmj_cdText');
+    var lmj_cdFill = document.getElementById('lmj_cdFill');
+    var lmj_sensorText = document.getElementById('lmj_sensorText');
+    var lmj_permText = document.getElementById('lmj_permText');
     var lmj_result = document.getElementById('lmj_result');
     var lmj_emoji = document.getElementById('lmj_emoji');
-    var lmj_dishName = document.getElementById('lmj_dishName');
-    var lmj_dishDesc = document.getElementById('lmj_dishDesc');
+    var lmj_name = document.getElementById('lmj_name');
+    var lmj_desc = document.getElementById('lmj_desc');
     var lmj_tag = document.getElementById('lmj_tag');
+    var lmj_perm = document.getElementById('lmj_perm');
+    var lmj_permBtn = document.getElementById('lmj_permBtn');
     var lmj_fallback = document.getElementById('lmj_fallback');
     var lmj_fallbackBtn = document.getElementById('lmj_fallbackBtn');
-    var lmj_permission = document.getElementById('lmj_permission');
-    var lmj_permBtn = document.getElementById('lmj_permBtn');
 
-    // 函数功能：随机抽取一道菜，显示结果卡片并带弹出动画
+    // 函数功能：抽取一道菜 + 弹出动画
     function lmj_pickDish() {
-      var dish = lmj_dishes[Math.floor(Math.random() * lmj_dishes.length)];
-      lmj_emoji.textContent = dish.emoji;
-      lmj_dishName.textContent = dish.name;
-      lmj_dishDesc.textContent = dish.desc;
-      lmj_tag.textContent = dish.tag;
-
+      var d = lmj_dishes[Math.floor(Math.random() * lmj_dishes.length)];
+      lmj_emoji.textContent = d.emoji;
+      lmj_name.textContent = d.name;
+      lmj_desc.textContent = d.desc;
+      lmj_tag.textContent = d.tag;
       lmj_result.classList.remove('lmj_show');
-      // 触发 reflow 让动画重播
       void lmj_result.offsetWidth;
       lmj_result.classList.add('lmj_show');
-
-      // 摇一摇动画
-      lmj_shakeZone.classList.add('lmj_shaking');
-      setTimeout(function () { lmj_shakeZone.classList.remove('lmj_shaking'); }, 500);
+      lmj_shake.classList.add('lmj_shaking');
+      setTimeout(function () { lmj_shake.classList.remove('lmj_shaking'); }, 600);
     }
 
-    // 函数功能：计算 accelerationIncludingGravity 的合成加速度（勾股定理三向合成）
-    function lmj_calcAccel(data) {
-      // accelerationIncludingGravity 包含重力分量，
-      // 静止时约等于 9.8（重力），摇动时会超过阈值
-      var acc = data.accelerationIncludingGravity;
-      if (!acc) return null;
-      var x = acc.x || 0, y = acc.y || 0, z = acc.z || 0;
-      return Math.hypot(x, y, z);
+    // 函数功能：验收①冷却倒计时可视化
+    function lmj_startCooldown() {
+      lmj_cd_end = Date.now() + lmj_COOLDOWN;
+      clearInterval(lmj_cd_tick);
+      lmj_cd_tick = setInterval(function () {
+        var r = lmj_cd_end - Date.now();
+        if (r <= 0) {
+          clearInterval(lmj_cd_tick);
+          lmj_cdFill.style.width = '100%'; lmj_cdFill.style.background = '#06d6a0';
+          lmj_cdText.innerHTML = '<b style="color:#06d6a0;">就绪</b>';
+          return;
+        }
+        var pct = (r / lmj_COOLDOWN) * 100;
+        lmj_cdFill.style.width = pct + '%';
+        lmj_cdFill.style.background = '#ef476f';
+        lmj_cdText.innerHTML = '<b style="color:#ef476f;">冷却 ' + r + 'ms</b>';
+      }, 20);
     }
 
-    // 函数功能：devicemotion 事件处理 —— 计算加速度，超阈值则触发摇一摇
-    function lmj_onMotion(e) {
-      var accel = lmj_calcAccel(e);
-      if (accel === null) return;
-
-      // 更新可视化 meter
-      var meterPct = Math.min(100, (accel / (lmj_threshold * 1.5)) * 100);
-      lmj_meterFill.style.width = meterPct + '%';
-
-      // 冷却中 —— 不处理
-      if (Date.now() < lmj_cooldownEnd) {
-        lmj_status.textContent = '冷却中…';
-        return;
-      }
-
-      // 超过阈值 —— 触发摇一摇
-      if (accel > lmj_threshold) {
-        lmj_status.textContent = '🎉 检测到摇动！加速度 ' + accel.toFixed(1);
-        lmj_pickDish();
-        lmj_cooldownEnd = Date.now() + lmj_cooldown;
-      } else {
-        lmj_status.textContent = '加速度 ' + accel.toFixed(1) + ' / 阈值 ' + lmj_threshold;
-      }
+    // 函数功能：合成加速度勾股定理（验收④用 accelerationIncludingGravity）
+    function lmj_accel(data) {
+      var a = data.accelerationIncludingGravity;
+      if (!a) return null;
+      return Math.hypot(a.x || 0, a.y || 0, a.z || 0);
     }
 
-    // 函数功能：尝试开启传感器监听，失败则显示降级方案
-    function lmj_initMotion() {
-      // 检测是否支持 devicemotion
+    // ===== 主入口：初始化传感器（验收②③）=====
+    function lmj_init() {
+      // 验收②：检测 API 是否存在
       if (typeof DeviceMotionEvent === 'undefined') {
-        lmj_showFallback('当前设备不支持加速度传感器');
+        lmj_sensorText.innerHTML = '<b style="color:#ef476f;">❌ 不支持（验收②降级）</b>';
+        lmj_fallback.classList.add('lmj_show');
+        lmj_fallbackBtn.addEventListener('click', lmj_pickDish);
         return;
       }
+      lmj_sensorText.innerHTML = '<b style="color:#06d6a0;">✓ 事件存在</b>';
 
-      // iOS 13+ 需要手动请求权限
+      // 验收③：iOS 13+ 需要用户点按钮授权
       if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        // 还没请求过权限 —— 显示授权按钮
-        lmj_permission.classList.remove('lmj_hidden');
+        lmj_permText.innerHTML = '<b style="color:#ff9f1c;">等用户授权</b>';
+        lmj_perm.classList.add('lmj_show');
         lmj_permBtn.addEventListener('click', function () {
-          DeviceMotionEvent.requestPermission().then(function (res) {
-            if (res === 'granted') {
-              lmj_permission.classList.add('lmj_hidden');
-              lmj_startListening();
+          DeviceMotionEvent.requestPermission().then(function (r) {
+            if (r === 'granted') {
+              lmj_permText.innerHTML = '<b style="color:#06d6a0;">✓ 已授权</b>';
+              lmj_perm.classList.remove('lmj_show');
+              lmj_listen();
             } else {
-              lmj_showFallback('传感器权限被拒绝');
+              lmj_permText.innerHTML = '<b style="color:#ef476f;">❌ 被拒绝</b>';
+              lmj_fallback.classList.add('lmj_show');
+              lmj_fallbackBtn.addEventListener('click', lmj_pickDish);
             }
           }).catch(function () {
-            lmj_showFallback('权限请求失败');
+            lmj_permText.innerHTML = '<b style="color:#ef476f;">❌ 授权失败</b>';
+            lmj_fallback.classList.add('lmj_show');
           });
         });
         return;
       }
 
-      // Android / 其他 —— 直接开启
-      lmj_startListening();
+      // 安卓/其他：直接监听
+      lmj_permText.innerHTML = '<b style="color:#06d6a0;">无需授权</b>';
+      lmj_listen();
     }
 
-    // 函数功能：真正开始监听 devicemotion 事件
-    function lmj_startListening() {
-      window.addEventListener('devicemotion', lmj_onMotion, false);
+    // 函数功能：正式监听 devicemotion + 验收①阈值判断
+    function lmj_listen() {
+      window.addEventListener('devicemotion', function (e) {
+        var a = lmj_accel(e);
+        if (a === null) return;
+
+        // 实时 meter
+        var pct = Math.min(100, (a / (lmj_THRESHOLD * 1.5)) * 100);
+        lmj_accFill.style.width = pct + '%';
+        lmj_accText.innerHTML = a.toFixed(1) + ' m/s²';
+
+        // 验收①：冷却内不触发
+        if (Date.now() < lmj_cd_end) { lmj_status.textContent = '冷却中…'; return; }
+
+        // 验收①：超过阈值触发
+        if (a > lmj_THRESHOLD) {
+          lmj_status.textContent = '🎉 摇动检测到！加速度 ' + a.toFixed(1);
+          lmj_pickDish();
+          lmj_startCooldown();
+        }
+      }, false);
+
       lmj_status.textContent = '✅ 传感器已就绪，摇一摇试试！';
-
-      // 保险：3 秒后如果加速度一直是 0，说明没有实际数据
-      setTimeout(function () {
-        // 如果仍然没有任何有效数据，说明虽然 API 存在但无传感器
-        // 这里简化处理，不做更复杂的检测
-      }, 3000);
     }
 
-    // 函数功能：显示降级方案 —— 设备不支持时用按钮代替
-    function lmj_showFallback(msg) {
-      console.warn('[lmj_sensor]', msg);
-      lmj_fallback.classList.remove('lmj_hidden');
-      lmj_status.textContent = msg;
-      lmj_fallbackBtn.addEventListener('click', function () {
-        lmj_pickDish();
-      });
-    }
-
-    // 页面加载后初始化
-    lmj_initMotion();
+    lmj_init();
   </script>
 </body>
 </html>

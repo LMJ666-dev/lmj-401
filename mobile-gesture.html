@@ -4,335 +4,424 @@
   建立时间：2026-11-18
   使用大模型：Trae AI Assistant
   功能名称：任务二 · 手势卡片 —— 左右滑动切换中华美食卡片
+           验收①阈值40px  验收②300ms冷却  验收③touch-action:pan-y
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>手势卡片 · 中华美食</title>
+  <title>任务二 · 手势卡片</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    /* 重点：整个 body 纵向可滚，证明验收③ pan-y 生效——卡片横滑时页面照样能上下滚 */
     body {
       font-family: "PingFang SC", "Microsoft YaHei", serif;
       background: #1a1a2e;
-      min-height: 100vh;
       color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px 16px;
+      min-height: 200vh;            /* 强制 body 有纵向滚动空间 */
+      padding: 30px 16px 80px;
     }
-
-    /* 首页入口 */
     #lmj_homeLink {
-      align-self: flex-start;
       display: inline-block;
-      padding: 8px 16px;
+      padding: 6px 14px;
       background: rgba(255,255,255,0.1);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 20px;
-      font-size: 13px;
-      margin-bottom: 20px;
+      color: #fff; text-decoration: none;
+      border-radius: 20px; font-size: 12px;
       border: 1px solid rgba(255,255,255,0.2);
+      margin-bottom: 20px;
     }
-    #lmj_homeLink:hover { background: rgba(255,255,255,0.2); }
 
-    h1 { font-size: 22px; letter-spacing: 3px; margin-bottom: 6px; }
-    .lmj_sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 30px; }
+    /* ===== 顶部标题 ===== */
+    .lmj_hdr { text-align: center; margin-bottom: 20px; }
+    .lmj_hdr h1 { font-size: 20px; letter-spacing: 3px; }
+    .lmj_hdr p  { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 6px; }
 
-    /* 卡片容器 —— pan-y：纵向还能滚，横向归我 */
+    /* ===== 验收点可视化面板 ===== */
+    .lmj_accept {
+      max-width: 380px; margin: 0 auto 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 12px;
+    }
+    .lmj_accept h3 {
+      font-size: 13px; color: #ffd166;
+      margin-bottom: 10px; letter-spacing: 1px;
+    }
+    .lmj_accept .lmj_row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 6px 0; color: rgba(255,255,255,0.75);
+    }
+    .lmj_accept code {
+      background: rgba(255,255,255,0.1);
+      padding: 1px 6px; border-radius: 4px;
+      font-size: 11px; font-family: Consolas, monospace;
+    }
+    /* 验收① 阈值 meter */
+    .lmj_meter-wrap {
+      background: rgba(255,255,255,0.1);
+      height: 6px; border-radius: 3px;
+      margin-top: 4px; overflow: hidden;
+    }
+    .lmj_meter-fill {
+      height: 100%; width: 0;
+      background: linear-gradient(90deg, #06d6a0, #ffd166, #ef476f);
+      transition: width 0.08s linear;
+    }
+    .lmj_threshold-line {
+      position: relative; height: 0;
+      top: -6px; pointer-events: none;
+    }
+    /* 验收② 冷却倒计时 */
+    .lmj_cooldown-box {
+      display: flex; gap: 8px; align-items: center;
+      margin-top: 4px;
+    }
+    .lmj_cooldown-bar {
+      flex: 1; height: 4px; background: rgba(255,255,255,0.1);
+      border-radius: 2px; overflow: hidden;
+    }
+    .lmj_cooldown-fill {
+      height: 100%; width: 100%;
+      background: #ef476f;
+      transition: width 0.05s linear;
+    }
+    /* 验收③ pan-y 说明 */
+    .lmj_pany-demo {
+      margin-top: 6px;
+      padding: 8px 12px;
+      background: rgba(6, 214, 160, 0.12);
+      border-left: 3px solid #06d6a0;
+      border-radius: 0 6px 6px 0;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.6;
+    }
+
+    /* ===== 卡片容器（验收③核心：touch-action: pan-y）===== */
     #lmj_cardWrap {
-      width: 100%;
-      max-width: 380px;
-      height: 480px;
+      width: 100%; max-width: 380px;
+      height: 420px;
+      margin: 0 auto;
       position: relative;
-      touch-action: pan-y;
+      touch-action: pan-y;          /* 验收③：只接管横向，纵向还给浏览器 */
       user-select: none;
       -webkit-touch-callout: none;
     }
-
-    /* 单张卡片 */
     .lmj_card {
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      padding: 40px 30px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
+      position: absolute; inset: 0;
+      border-radius: 20px;
+      padding: 40px 26px;
+      display: flex; flex-direction: column; justify-content: flex-end;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
                   opacity 0.3s ease;
       opacity: 0;
-      transform: translateX(100%);
+      transform: translateX(120%);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
     }
+    /* 美食照片上方叠一层渐变，保证文字可读 */
+    .lmj_card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.75) 0%,
+        rgba(0,0,0,0.35) 45%,
+        rgba(0,0,0,0.05) 85%
+      );
+      z-index: 0;
+    }
+    .lmj_card > * { position: relative; z-index: 1; }
     .lmj_card.lmj_active { opacity: 1; transform: translateX(0); z-index: 2; }
-    .lmj_card.lmj_prev { opacity: 0; transform: translateX(-100%); z-index: 1; }
-    .lmj_card.lmj_next { opacity: 0; transform: translateX(100%); z-index: 1; }
+    .lmj_card.lmj_prev   { opacity: 0; transform: translateX(-120%); z-index: 1; }
+    .lmj_card.lmj_next   { opacity: 0; transform: translateX(120%);  z-index: 1; }
     .lmj_card.lmj_dragging { transition: none; }
 
-    .lmj_card h2 {
-      font-size: 32px;
-      margin-bottom: 14px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    }
-    .lmj_card p {
-      font-size: 15px;
-      line-height: 1.8;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-    }
+    .lmj_card h2 { font-size: 30px; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+    .lmj_card p  { font-size: 14px; line-height: 1.8; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
     .lmj_card .lmj_tag {
-      position: absolute;
-      top: 30px;
-      left: 30px;
+      position: absolute; top: 24px; left: 24px;
       background: rgba(255,255,255,0.25);
       backdrop-filter: blur(10px);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      letter-spacing: 1px;
+      padding: 4px 12px; border-radius: 16px;
+      font-size: 11px; letter-spacing: 1px;
     }
 
-    /* 指示器 */
-    .lmj_counter {
-      margin-top: 24px;
-      font-size: 14px;
-      color: rgba(255,255,255,0.6);
-      letter-spacing: 2px;
+    /* ===== 底部计数 + 圆点 ===== */
+    .lmj_foot {
+      max-width: 380px; margin: 22px auto 0; text-align: center;
     }
-    .lmj_dots {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
+    .lmj_counter { font-size: 14px; color: rgba(255,255,255,0.6); letter-spacing: 2px; }
+    .lmj_dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
     .lmj_dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
+      width: 8px; height: 8px; border-radius: 50%;
       background: rgba(255,255,255,0.3);
       transition: all 0.3s;
     }
-    .lmj_dot.lmj_current {
-      background: #ffd166;
-      width: 22px;
-      border-radius: 4px;
-    }
+    .lmj_dot.lmj_current { background: #ffd166; width: 22px; border-radius: 4px; }
 
-    /* 边界提示 */
+    /* ===== 边界 toast ===== */
     .lmj_toast {
-      position: fixed;
-      bottom: 40px;
-      left: 50%;
+      position: fixed; bottom: 60px; left: 50%;
       transform: translateX(-50%) translateY(100px);
-      background: rgba(0,0,0,0.75);
-      color: #fff;
-      padding: 10px 22px;
-      border-radius: 24px;
-      font-size: 14px;
-      opacity: 0;
-      transition: all 0.3s;
+      background: rgba(0,0,0,0.8);
+      color: #fff; padding: 10px 22px;
+      border-radius: 24px; font-size: 13px;
+      opacity: 0; transition: all 0.3s;
       pointer-events: none;
+      z-index: 100;
     }
-    .lmj_toast.lmj_show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .lmj_toast.lmj_show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .lmj_hint {
-      margin-top: 20px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 1px;
+    /* ===== 底部额外可滚内容（验收③：证明 pan-y 生效）===== */
+    .lmj_spacer {
+      max-width: 380px; margin: 50px auto 0;
+      padding: 20px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      font-size: 12px; color: rgba(255,255,255,0.4);
+      line-height: 1.8;
     }
   </style>
 </head>
 <body>
   <a id="lmj_homeLink" href="index.html">← 返回首页</a>
 
-  <h1>中华美食卡片</h1>
-  <p class="lmj_sub">← 左滑下一道 · 右滑上一道 →</p>
-
-  <div id="lmj_cardWrap">
-    <!-- 卡片由 JS 生成 -->
+  <div class="lmj_hdr">
+    <h1>中华美食卡片 · 任务二</h1>
+    <p>验收①阈值 40px　验收②300ms 冷却　验收③pan-y 不挡页面</p>
   </div>
 
-  <div class="lmj_counter"><span id="lmj_idx">1</span> / <span id="lmj_total">4</span></div>
-  <div class="lmj_dots" id="lmj_dots"></div>
+  <!-- ===== 验收点可视化面板 ===== -->
+  <div class="lmj_accept">
+    <h3>🛠️ 验收点实时监控</h3>
 
-  <p class="lmj_hint">📱 请用手机或浏览器设备模式体验</p>
+    <!-- 验收①：阈值 meter -->
+    <div class="lmj_row">
+      <span>验收① 横向位移 meter</span>
+      <span id="lmj_dxText"><code>0 px</code></span>
+    </div>
+    <div class="lmj_meter-wrap">
+      <div class="lmj_meter-fill" id="lmj_meterFill"></div>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;">
+      ←── 40px 阈值 ── 超过才切换 →──
+    </div>
 
-  <div class="lmj_toast" id="lmj_toast">已经是第一张啦</div>
+    <!-- 验收②：冷却倒计时 -->
+    <div class="lmj_row" style="margin-top:12px;">
+      <span>验收② 连滑冷却</span>
+      <span id="lmj_cdText"><code style="background:#06d6a0;color:#fff;">就绪</code></span>
+    </div>
+    <div class="lmj_cooldown-box">
+      <div class="lmj_cooldown-bar">
+        <div class="lmj_cooldown-fill" id="lmj_cdFill" style="width:0;background:#06d6a0;"></div>
+      </div>
+    </div>
+
+    <!-- 验收③：pan-y 说明 -->
+    <div class="lmj_pany-demo">
+      ✅ 验收③已生效：卡片容器 <code>touch-action:pan-y</code>，<br>
+      横滑切换卡片时纵向滚动照样可用 —— 试一下：<br>
+      手指同时斜向下滑，页面会边滚边露出下一道菜的卡片。
+    </div>
+  </div>
+
+  <!-- ===== 卡片容器 ===== -->
+  <div id="lmj_cardWrap">
+    <!-- JS 生成 -->
+  </div>
+
+  <!-- ===== 底部计数 ===== -->
+  <div class="lmj_foot">
+    <div class="lmj_counter">第 <span id="lmj_idx">1</span> / <span id="lmj_total">4</span> 道菜</div>
+    <div class="lmj_dots" id="lmj_dots"></div>
+  </div>
+
+  <!-- 验收③证明：额外可滚内容 -->
+  <div class="lmj_spacer">
+    ⬇️ 往下滚还能看到这段文字，证明卡片横滑时页面纵向滚动没被挡住（验收③ pan-y 生效）。<br><br>
+    技巧总结：<br>
+    • touch-action:none 完全接管手势，整个容器都不会滚动<br>
+    • touch-action:pan-y 只接管横向，纵向还给浏览器 —— 我们用这个<br>
+    • touch-action:pan-x 只接管纵向，横向还给浏览器<br>
+    • 不写 touch-action —— 浏览器优先滚页面，手势代码会断断续续
+  </div>
+
+  <div class="lmj_toast" id="lmj_toast"></div>
 
   <script>
-    // 任务二 · 手势卡片
-    // 数据：4 道中华美食
+    // 任务二：手势卡片
     var lmj_foods = [
-      { name: '麻婆豆腐', desc: '麻辣鲜香的川菜经典，嫩滑豆腐裹着红油酱汁，配以花椒的麻与豆瓣的香，入口层次丰富，下饭神器。', tag: '川菜 · 四川', bg: 'linear-gradient(135deg,#ff6b6b,#c0392b)' },
-      { name: '北京烤鸭', desc: '皮脆肉嫩的京菜代表，果木炭火慢烤，鸭皮金黄酥脆，配以甜面酱、葱白、黄瓜丝，用薄饼卷着吃。', tag: '京菜 · 北京', bg: 'linear-gradient(135deg,#f39c12,#d35400)' },
-      { name: '小笼包', desc: '皮薄馅大、汤汁鲜美的上海名点，轻咬慢吸，鲜美的肉汤在口中散开，配上姜丝和香醋更是绝配。', tag: '沪菜 · 上海', bg: 'linear-gradient(135deg,#27ae60,#16a085)' },
-      { name: '东坡肉', desc: '苏东坡创制的浙菜名菜，选用五花肉慢炖而成，色泽红亮、入口即化，肥而不腻，瘦而不柴。', tag: '浙菜 · 杭州', bg: 'linear-gradient(135deg,#9b59b6,#6c3483)' }
+      { name: '麻婆豆腐',  desc: '麻辣鲜香的川菜经典，嫩滑豆腐裹着红油酱汁。',               tag: '川菜 · 四川', img: 'food1.jpg' },
+      { name: '北京烤鸭',  desc: '皮脆肉嫩的京菜代表，果木炭火慢烤，配薄饼卷着吃。',         tag: '京菜 · 北京', img: 'food2.jpg' },
+      { name: '小笼包',    desc: '皮薄馅大汤汁鲜美的上海名点，轻咬慢吸，肉汤在口中散开。',   tag: '沪菜 · 上海', img: 'food3.jpg' },
+      { name: '东坡肉',    desc: '苏东坡创制的浙菜名菜，慢炖而成，入口即化，肥而不腻。',     tag: '浙菜 · 杭州', img: 'food4.jpg' }
     ];
 
-    var lmj_threshold = 40;       // 滑动阈值（px）
-    var lmj_cooldown = 300;       // 冷却时间（ms），防止连滑跳两张
-    var lmj_index = 0;            // 当前卡片索引
-    var lmj_startX = 0;           // 触摸起点 X
-    var lmj_startY = 0;           // 触摸起点 Y
-    var lmj_currentX = 0;         // 当前触摸 X
-    var lmj_isDragging = false;   // 是否正在拖动
-    var lmj_cooldownTimer = 0;    // 冷却计时器
+    var lmj_THRESHOLD = 40;          // 验收①阈值 40px
+    var lmj_COOLDOWN  = 300;        // 验收②冷却 300ms
+    var lmj_index = 0;
+    var lmj_startX = 0, lmj_startY = 0, lmj_currentX = 0, lmj_dragging = false;
+    var lmj_cd_end = 0;             // 冷却结束时间戳
+    var lmj_cd_tick = null;         // 冷却倒计时定时器
 
     var lmj_wrap = document.getElementById('lmj_cardWrap');
     var lmj_idxEl = document.getElementById('lmj_idx');
     var lmj_totalEl = document.getElementById('lmj_total');
     var lmj_dotsEl = document.getElementById('lmj_dots');
     var lmj_toast = document.getElementById('lmj_toast');
+    var lmj_meterFill = document.getElementById('lmj_meterFill');
+    var lmj_dxText = document.getElementById('lmj_dxText');
+    var lmj_cdFill = document.getElementById('lmj_cdFill');
+    var lmj_cdText = document.getElementById('lmj_cdText');
 
-    // 函数功能：初始化 —— 生成卡片 DOM 和底部圆点指示器
+    // 函数功能：初始化卡片 + 圆点 + 计数
     function lmj_init() {
       lmj_totalEl.textContent = lmj_foods.length;
-
-      // 生成卡片
-      lmj_foods.forEach(function (food, i) {
+      lmj_foods.forEach(function (food) {
         var card = document.createElement('div');
         card.className = 'lmj_card';
-        card.style.background = food.bg;
-        card.innerHTML =
-          '<span class="lmj_tag">' + food.tag + '</span>' +
-          '<h2>' + food.name + '</h2>' +
-          '<p>' + food.desc + '</p>';
+        card.style.backgroundImage = 'url(' + food.img + ')';
+        card.innerHTML = '<span class="lmj_tag">' + food.tag + '</span>' +
+                         '<h2>' + food.name + '</h2>' +
+                         '<p>'  + food.desc + '</p>';
         lmj_wrap.appendChild(card);
-
-        // 生成圆点
-        var dot = document.createElement('span');
-        dot.className = 'lmj_dot';
-        lmj_dotsEl.appendChild(dot);
+        lmj_dotsEl.appendChild(document.createElement('span')).className = 'lmj_dot';
       });
-
       lmj_updateUI();
     }
 
-    // 函数功能：根据当前索引更新卡片位置、计数器、圆点高亮
+    // 函数功能：更新卡片位置、计数、圆点
     function lmj_updateUI() {
       var cards = lmj_wrap.querySelectorAll('.lmj_card');
       cards.forEach(function (c, i) {
-        c.classList.remove('lmj_active', 'lmj_prev', 'lmj_next', 'lmj_dragging');
-        if (i === lmj_index) c.classList.add('lmj_active');
-        else if (i < lmj_index) c.classList.add('lmj_prev');
-        else c.classList.add('lmj_next');
+        c.classList.remove('lmj_active', 'lmj_prev', 'lmj_next');
+        if      (i === lmj_index) c.classList.add('lmj_active');
+        else if (i <  lmj_index)  c.classList.add('lmj_prev');
+        else                      c.classList.add('lmj_next');
       });
-
       var dots = lmj_dotsEl.querySelectorAll('.lmj_dot');
-      dots.forEach(function (d, i) {
-        d.classList.toggle('lmj_current', i === lmj_index);
-      });
-
+      dots.forEach(function (d, i) { d.classList.toggle('lmj_current', i === lmj_index); });
       lmj_idxEl.textContent = lmj_index + 1;
     }
 
-    // 函数功能：显示边界提示 toast（1.2s 后自动隐藏）
+    // 函数功能：显示边界提示 toast
     function lmj_showToast(msg) {
       lmj_toast.textContent = msg;
       lmj_toast.classList.add('lmj_show');
       clearTimeout(lmj_showToast._t);
-      lmj_showToast._t = setTimeout(function () {
-        lmj_toast.classList.remove('lmj_show');
-      }, 1200);
+      lmj_showToast._t = setTimeout(function () { lmj_toast.classList.remove('lmj_show'); }, 1200);
     }
 
-    // 函数功能：冷却检查 —— 在冷却期内返回 true 阻止切换
-    function lmj_inCooldown() {
-      if (lmj_cooldownTimer > Date.now()) return true;
-      lmj_cooldownTimer = Date.now() + lmj_cooldown;
-      return false;
+    // 函数功能：启动冷却可视化倒计时（验收②）
+    function lmj_startCooldown() {
+      lmj_cd_end = Date.now() + lmj_COOLDOWN;
+      clearInterval(lmj_cd_tick);
+      lmj_cd_tick = setInterval(function () {
+        var remain = lmj_cd_end - Date.now();
+        if (remain <= 0) {
+          clearInterval(lmj_cd_tick);
+          lmj_cdFill.style.width = '100%';
+          lmj_cdFill.style.background = '#06d6a0';
+          lmj_cdText.innerHTML = '<code style="background:#06d6a0;color:#fff;">就绪</code>';
+          return;
+        }
+        var pct = (remain / lmj_COOLDOWN) * 100;
+        lmj_cdFill.style.width = pct + '%';
+        lmj_cdFill.style.background = '#ef476f';
+        lmj_cdText.innerHTML = '<code style="background:#ef476f;color:#fff;">冷却 ' + remain + 'ms</code>';
+      }, 20);
     }
 
-    // 函数功能：触摸开始 —— 记录起点坐标
+    // ===== touchstart：记录起点 =====
     lmj_wrap.addEventListener('touchstart', function (e) {
-      if (lmj_inCooldown()) return;
+      if (Date.now() < lmj_cd_end) return;   // 冷却中不响应
       var t = e.touches[0];
-      lmj_startX = t.clientX;
-      lmj_startY = t.clientY;
+      lmj_startX = t.clientX; lmj_startY = t.clientY;
       lmj_currentX = t.clientX;
-      lmj_isDragging = true;
-      var cards = lmj_wrap.querySelectorAll('.lmj_card');
-      cards.forEach(function (c) { c.classList.add('lmj_dragging'); });
+      lmj_dragging = true;
+      lmj_wrap.querySelectorAll('.lmj_card').forEach(function (c) { c.classList.add('lmj_dragging'); });
     }, { passive: true });
 
-    // 函数功能：触摸移动 —— 实时跟手拖动当前卡片（无动画）
+    // ===== touchmove：实时跟手 + 更新验收① meter =====
     lmj_wrap.addEventListener('touchmove', function (e) {
-      if (!lmj_isDragging) return;
+      if (!lmj_dragging) return;
       var t = e.touches[0];
       lmj_currentX = t.clientX;
       var dx = lmj_currentX - lmj_startX;
+      var absX = Math.abs(dx);
 
+      // 更新 meter（验收①可视化）
+      var meterPct = Math.min(100, (absX / lmj_THRESHOLD) * 100);
+      lmj_meterFill.style.width = meterPct + '%';
+      lmj_dxText.innerHTML = '<code>' + Math.round(absX) + ' px</code>' +
+        (absX >= lmj_THRESHOLD ? '<code style="background:#ef476f;">超过阈值</code>' : '');
+
+      // 跟手拖动
       var active = lmj_wrap.querySelector('.lmj_card.lmj_active');
       if (active) active.style.transform = 'translateX(' + dx + 'px)';
-
-      // 同时让相邻卡片也跟手露出来
-      var show = dx > 0 ? lmj_wrap.querySelector('.lmj_card.lmj_prev')
-                       : lmj_wrap.querySelector('.lmj_card.lmj_next');
+      var show = dx > 0
+        ? lmj_wrap.querySelector('.lmj_card.lmj_prev')
+        : lmj_wrap.querySelector('.lmj_card.lmj_next');
       if (show) {
-        var showOffset = dx > 0 ? (-100 + dx / 4) + '%' : (100 + dx / 4) + '%';
+        var showOffset = dx > 0 ? (-120 + dx / 4) + '%' : (120 + dx / 4) + '%';
         show.style.transform = 'translateX(' + showOffset + ')';
-        show.style.opacity = Math.min(1, Math.abs(dx) / 100);
+        show.style.opacity = Math.min(1, absX / 120);
       }
     }, { passive: true });
 
-    // 函数功能：触摸结束 —— 计算位移，判断是否切换卡片或回弹
+    // ===== touchend：验收①阈值判断 + 验收②冷却 =====
     lmj_wrap.addEventListener('touchend', function (e) {
-      if (!lmj_isDragging) return;
-      lmj_isDragging = false;
+      if (!lmj_dragging) return;
+      lmj_dragging = false;
 
       var dx = lmj_currentX - lmj_startX;
-      var dy = lmj_startY - (e.changedTouches[0].clientY); // 纵向位移（不用于切换，只用于判断方向）
-      var absX = Math.abs(dx);
-      var absY = Math.abs(dy);
+      var dy = lmj_startY - (e.changedTouches[0].clientY);
+      var absX = Math.abs(dx), absY = Math.abs(dy);
 
-      // 先恢复所有卡片的内联样式（让 CSS 过渡接管）
-      var cards = lmj_wrap.querySelectorAll('.lmj_card');
-      cards.forEach(function (c) {
-        c.style.transform = '';
-        c.style.opacity = '';
-        c.classList.remove('lmj_dragging');
+      // 先恢复内联样式
+      lmj_wrap.querySelectorAll('.lmj_card').forEach(function (c) {
+        c.style.transform = ''; c.style.opacity = ''; c.classList.remove('lmj_dragging');
       });
 
-      // 纵向滑动优先交给页面，不触发切换
-      if (absY > absX) return;
+      // 纵向优先（验收③ pan-y：让浏览器正常滚页面）
+      if (absY > absX) { lmj_meterFill.style.width = '0'; lmj_dxText.innerHTML = '<code>0 px</code>'; return; }
 
-      if (absX < lmj_threshold) {
-        // 距离不够，视为误触或点击 —— 回弹
+      // 验收①：短距离（<40px）不切换 —— 回弹
+      if (absX < lmj_THRESHOLD) {
+        lmj_meterFill.style.width = '0';
+        lmj_dxText.innerHTML = '<code>' + Math.round(absX) + ' px</code>' +
+          '<code style="background:#636e72;">阈值内 · 不切换</code>';
+        setTimeout(function () { lmj_dxText.innerHTML = '<code>0 px</code>'; lmj_meterFill.style.width = '0'; }, 800);
         return;
       }
 
+      // 满足阈值：触发切换 + 验收②启动冷却
+      lmj_startCooldown();
       if (dx < 0) {
-        // 左滑 → 下一张
-        if (lmj_index < lmj_foods.length - 1) {
-          lmj_index++;
-        } else {
-          lmj_showToast('已经是最后一道啦 🎉');
-        }
+        if (lmj_index < lmj_foods.length - 1) lmj_index++;
+        else lmj_showToast('已经是最后一道啦 🎉');
       } else {
-        // 右滑 → 上一张
-        if (lmj_index > 0) {
-          lmj_index--;
-        } else {
-          lmj_showToast('已经是第一道啦 🥢');
-        }
+        if (lmj_index > 0) lmj_index--;
+        else lmj_showToast('已经是第一道啦 🥢');
       }
-
       lmj_updateUI();
+      setTimeout(function () { lmj_dxText.innerHTML = '<code>0 px</code>'; lmj_meterFill.style.width = '0'; }, 500);
     });
 
-    // 函数功能：触摸取消 —— 被系统打断时清理拖动状态
+    // ===== touchcancel：被电话/通知打断时清理 =====
     lmj_wrap.addEventListener('touchcancel', function () {
-      lmj_isDragging = false;
-      var cards = lmj_wrap.querySelectorAll('.lmj_card');
-      cards.forEach(function (c) {
-        c.style.transform = '';
-        c.style.opacity = '';
-        c.classList.remove('lmj_dragging');
+      lmj_dragging = false;
+      lmj_wrap.querySelectorAll('.lmj_card').forEach(function (c) {
+        c.style.transform = ''; c.style.opacity = ''; c.classList.remove('lmj_dragging');
       });
     });
 
