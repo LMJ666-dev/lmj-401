@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!--
+  文件：mobile-zoom.html
+  课程：高级网页设计 · 移动端触摸事件（2026-2027-1）
+  任务三：图片查看器 —— 双指缩放 + 双击放大 + 拖动（⭐⭐⭐）
+  姓名：梁铭巨    学号：24002120401
+  命名前缀：lmj_
+  交互说明：双指以两指中点（图片坐标）为锚点缩放，因此图片不会跳；
+           单指拖动带动量惯性，越界有阻尼并在松手后回弹。
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>任务三 · 图片查看器</title>
+<style>
+  :root {
+    --lmj_bg: #08060f;
+    --lmj_text: #f7f4ff;
+    --lmj_muted: #9d94b8;
+    --lmj_line: rgba(255, 255, 255, .09);
+    --lmj_violet: #a78bfa;
+    --lmj_gold: #ffc46b;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body { margin: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: 30px 18px calc(30px + env(safe-area-inset-bottom));
+    background: var(--lmj_bg);
+    color: var(--lmj_text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: -12vh;
+    left: -10vw;
+    width: 120vw;
+    height: 62vh;
+    background:
+      radial-gradient(50% 50% at 50% 20%, rgba(124, 92, 255, .26), transparent 70%),
+      radial-gradient(38% 38% at 82% 8%, rgba(255, 164, 80, .16), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .lmj_page {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .lmj_kicker {
+    margin: 0 0 10px;
+    font-size: 11px;
+    letter-spacing: .3em;
+    color: var(--lmj_violet);
+  }
+
+  .lmj_title {
+    margin: 0 0 10px;
+    font-size: 31px;
+    line-height: 1.2;
+    background: linear-gradient(100deg, #ffffff 10%, #cfc0ff 55%, var(--lmj_gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lmj_sub {
+    margin: 0 0 22px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--lmj_muted);
+  }
+
+  /* ---------- 查看器 ---------- */
+  .lmj_viewer {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: min(64vh, 520px);
+    border-radius: 26px;
+    background: #05030a;
+    box-shadow:
+      0 30px 70px -18px rgba(0, 0, 0, .9),
+      0 0 0 1px rgba(255, 255, 255, .08);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .lmj_img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: 0 0;
+    will-change: transform;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    opacity: 0;
+    transition: opacity .4s ease;
+  }
+
+  .lmj_img--ready { opacity: 1; }
+
+  /* 双击等程序化动画才加的过渡 */
+  .lmj_img--anim { transition: transform .25s ease-out; }
+
+  /* 图片加载中的骨架 */
+  .lmj_skeleton {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, #14101f 8%, #221a38 18%, #14101f 33%);
+    background-size: 220% 100%;
+    animation: lmj_shimmer 1.4s linear infinite;
+  }
+
+  @keyframes lmj_shimmer {
+    to { background-position: -220% 0; }
+  }
+
+  .lmj_err {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--lmj_muted);
+  }
+
+  /* 顶部左下角倍数 / 右上角复位 */
+  .lmj_hud {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: rgba(10, 7, 20, .55);
+    border: 1px solid rgba(255, 255, 255, .16);
+    font-size: 12px;
+    letter-spacing: .1em;
+    color: #e3dbff;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .lmj_reset {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: rgba(10, 7, 20, .55);
+    border: 1px solid rgba(255, 255, 255, .18);
+    font-size: 12px;
+    letter-spacing: .1em;
+    color: #e3dbff;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform .12s ease, background .2s ease;
+  }
+
+  .lmj_reset:active {
+    transform: scale(.94);
+    background: rgba(255, 255, 255, .16);
+  }
+
+  /* 底部说明叠层 */
+  .lmj_caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 48px 18px 16px;
+    background: linear-gradient(to top, rgba(4, 3, 9, .88), transparent);
+    pointer-events: none;
+  }
+
+  .lmj_caption strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 17px;
+    letter-spacing: .06em;
+  }
+
+  .lmj_caption span {
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: rgba(255, 255, 255, .6);
+  }
+
+  /* ---------- 功能说明小卡 ---------- */
+  .lmj_chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .lmj_chip {
+    padding: 8px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--lmj_line);
+    background: rgba(255, 255, 255, .04);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: #a89fc4;
+  }
+
+  .lmj_note {
+    margin: 20px 4px 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px dashed var(--lmj_line);
+    font-size: 12px;
+    line-height: 1.9;
+    color: #8a819f;
+  }
+
+  .lmj_sign {
+    margin: 14px 4px 0;
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: #635a7d;
+  }
+</style>
+</head>
+<body>
+
+<div class="lmj_page">
+  <header>
+    <p class="lmj_kicker">TASK 03 · ZOOM</p>
+    <h1 class="lmj_title">双指缩放 · 双击放大</h1>
+    <p class="lmj_sub">双指缩放请用手机打开；桌面可在开发者工具的设备模式下体验拖动与双击。</p>
+  </header>
+
+  <!-- 查看器：overflow:hidden + touch-action:none -->
+  <div class="lmj_viewer" id="lmj_viewer">
+    <div class="lmj_skeleton" id="lmj_skeleton"></div>
+
+    <img
+      class="lmj_img"
+      id="lmj_img"
+      src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=close-up%20photo%20of%20a%20steaming%20bowl%20of%20Lanzhou%20beef%20noodles%20with%20sliced%20beef%2C%20cilantro%2C%20radish%20and%20chili%20oil%2C%20rich%20texture%20details%2C%20warm%20restaurant%20light%2C%20shallow%20depth%20of%20field&image_size=portrait_4_3"
+      alt="兰州牛肉面大图">
+
+    <p class="lmj_err" id="lmj_err" hidden>图片加载失败，请检查网络后刷新</p>
+
+    <div class="lmj_hud"><span id="lmj_zoomText">1.0x</span></div>
+    <button class="lmj_reset" id="lmj_reset" type="button">复位</button>
+
+    <div class="lmj_caption">
+      <strong>兰州牛肉面</strong>
+      <span>双指缩放 · 双击放大 · 放大后单指拖动</span>
+    </div>
+  </div>
+
+  <div class="lmj_chips">
+    <span class="lmj_chip">1x – 4x</span>
+    <span class="lmj_chip">以两指中点缩放</span>
+    <span class="lmj_chip">拖动带惯性</span>
+    <span class="lmj_chip">边界回弹</span>
+  </div>
+
+  <p class="lmj_note">
+    验收自查：缩放以两指中点为基准（不跳）· 1x～4x 边界限制 · 1x 时拖不动 · 松手自动收进边界 · 旋转屏幕后缩放状态保留。
+  </p>
+
+  <p class="lmj_sign">梁铭巨 · 24002120401 · 高级网页设计</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var lmj_viewer   = document.getElementById('lmj_viewer');
+  var lmj_img      = document.getElementById('lmj_img');
+  var lmj_skeleton = document.getElementById('lmj_skeleton');
+  var lmj_err      = document.getElementById('lmj_err');
+  var lmj_zoomText = document.getElementById('lmj_zoomText');
+
+  // ---------- 状态 ----------
+  var lmj_scale = 1;
+  var lmj_tx = 0, lmj_ty = 0;
+  var lmj_MIN = 1, lmj_MAX = 4;
+
+  var lmj_mode = 'none';           // none | drag | pinch
+
+  var lmj_dragStartX = 0, lmj_dragStartY = 0;
+  var lmj_dragStartTx = 0, lmj_dragStartTy = 0;
+  var lmj_lastX = 0, lmj_lastY = 0, lmj_lastT = 0;
+  var lmj_velX = 0, lmj_velY = 0;
+
+  var lmj_pinchStartDist = 0, lmj_pinchStartScale = 1;
+  var lmj_pinchPointX = 0, lmj_pinchPointY = 0;
+
+  var lmj_tapStartTime = 0, lmj_tapStartX = 0, lmj_tapStartY = 0;
+  var lmj_lastTapTime = 0;
+
+  var lmj_animTimer = null;
+  var lmj_raf = null;
+
+  // ---------- 工具 ----------
+  function lmj_dist(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY) || 1;
+  }
+
+  function lmj_mid(t1, t2) {
+    return {
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2
+    };
+  }
+
+  function lmj_clampScale(s) {
+    return Math.min(lmj_MAX, Math.max(lmj_MIN, s));
+  }
+
+  /* 硬边界：缩放后的图片必须始终铺满容器 */
+  function lmj_limit(s, x, y) {
+    var lmj_w = lmj_viewer.clientWidth;
+    var lmj_h = lmj_viewer.clientHeight;
+    var lmj_minX = lmj_w - lmj_w * s;
+    var lmj_minY = lmj_h - lmj_h * s;
+
+    if (x > 0) x = 0;
+    else if (x < lmj_minX) x = lmj_minX;
+    if (y > 0) y = 0;
+    else if (y < lmj_minY) y = lmj_minY;
+
+    return { x: x, y: y };
+  }
+
+  /* 软边界：拖动时越界只跟 28%，松手再弹回，手感更"有阻力" */
+  function lmj_limitSoft(s, x, y) {
+    var lmj_w = lmj_viewer.clientWidth;
+    var lmj_h = lmj_viewer.clientHeight;
+    var lmj_minX = Math.min(0, lmj_w - lmj_w * s);
+    var lmj_minY = Math.min(0, lmj_h - lmj_h * s);
+
+    if (x > 0) x = x * 0.28;
+    else if (x < lmj_minX) x = lmj_minX + (x - lmj_minX) * 0.28;
+
+    if (y > 0) y = y * 0.28;
+    else if (y < lmj_minY) y = lmj_minY + (y - lmj_minY) * 0.28;
+
+    return { x: x, y: y };
+  }
+
+  function lmj_render(s, x, y) {
+    lmj_scale = s;
+    lmj_tx = x;
+    lmj_ty = y;
+    lmj_img.style.transform =
+      'translate3d(' + x + 'px,' + y + 'px,0) scale(' + s + ')';
+    lmj_zoomText.textContent = s.toFixed(1) + 'x';
+  }
+
+  function lmj_apply(s, x, y) {
+    var lmj_p = lmj_limit(s, x, y);
+    lmj_render(s, lmj_p.x, lmj_p.y);
+  }
+
+  function lmj_animate(on) {
+    clearTimeout(lmj_animTimer);
+    lmj_img.classList.toggle('lmj_img--anim', !!on);
+    if (on) {
+      lmj_animTimer = setTimeout(function () {
+        lmj_img.classList.remove('lmj_img--anim');
+      }, 280);
+    }
+  }
+
+  function lmj_stopInertia() {
+    if (lmj_raf) {
+      cancelAnimationFrame(lmj_raf);
+      lmj_raf = null;
+    }
+  }
+
+  /* 松手惯性：按速度衰减滑动，撞到边界就停 */
+  function lmj_startInertia(vx, vy) {
+    if (Math.abs(vx) < 0.05 && Math.abs(vy) < 0.05) return;
+
+    function lmj_step() {
+      vx *= 0.93;
+      vy *= 0.93;
+
+      var lmj_nx = lmj_tx + vx * 16;
+      var lmj_ny = lmj_ty + vy * 16;
+      var lmj_p = lmj_limit(lmj_scale, lmj_nx, lmj_ny);
+
+      if (lmj_p.x !== lmj_nx) vx = 0;
+      if (lmj_p.y !== lmj_ny) vy = 0;
+
+      lmj_render(lmj_scale, lmj_p.x, lmj_p.y);
+
+      if (Math.abs(vx) < 0.03 && Math.abs(vy) < 0.03) {
+        lmj_raf = null;
+        return;
+      }
+      lmj_raf = requestAnimationFrame(lmj_step);
+    }
+
+    lmj_raf = requestAnimationFrame(lmj_step);
+  }
+
+  // ---------- touchstart ----------
+  lmj_viewer.addEventListener('touchstart', function (e) {
+    lmj_stopInertia();
+    lmj_animate(false);
+
+    var lmj_r = lmj_viewer.getBoundingClientRect();
+
+    if (e.touches.length >= 2) {
+      var lmj_a = e.touches[0];
+      var lmj_b = e.touches[1];
+      var lmj_m = lmj_mid(lmj_a, lmj_b);
+
+      lmj_mode = 'pinch';
+      lmj_pinchStartDist = lmj_dist(lmj_a, lmj_b);
+      lmj_pinchStartScale = lmj_scale;
+
+      // 把"两指中点"换算成图片坐标，缩放时钉住它 → 图片不跳
+      lmj_pinchPointX = (lmj_m.x - lmj_r.left - lmj_tx) / lmj_scale;
+      lmj_pinchPointY = (lmj_m.y - lmj_r.top - lmj_ty) / lmj_scale;
+
+    } else {
+      lmj_mode = 'drag';
+      lmj_dragStartX = e.touches[0].clientX;
+      lmj_dragStartY = e.touches[0].clientY;
+      lmj_dragStartTx = lmj_tx;
+      lmj_dragStartTy = lmj_ty;
+
+      lmj_lastX = lmj_dragStartX;
+      lmj_lastY = lmj_dragStartY;
+      lmj_lastT = Date.now();
+      lmj_velX = 0;
+      lmj_velY = 0;
+
+      lmj_tapStartTime = Date.now();
+      lmj_tapStartX = lmj_dragStartX;
+      lmj_tapStartY = lmj_dragStartY;
+    }
+  }, { passive: true });
+
+  // ---------- touchmove ----------
+  lmj_viewer.addEventListener('touchmove', function (e) {
+
+    // 拖动途中加入第二根手指：立即切到双指模式
+    if (e.touches.length >= 2 && lmj_mode !== 'pinch') {
+      var lmj_r0 = lmj_viewer.getBoundingClientRect();
+      var lmj_a0 = e.touches[0];
+      var lmj_b0 = e.touches[1];
+      var lmj_m0 = lmj_mid(lmj_a0, lmj_b0);
+
+      lmj_mode = 'pinch';
+      lmj_pinchStartDist = lmj_dist(lmj_a0, lmj_b0);
+      lmj_pinchStartScale = lmj_scale;
+      lmj_pinchPointX = (lmj_m0.x - lmj_r0.left - lmj_tx) / lmj_scale;
+      lmj_pinchPointY = (lmj_m0.y - lmj_r0.top - lmj_ty) / lmj_scale;
+    }
+
+    if (lmj_mode === 'pinch' && e.touches.length >= 2) {
+      e.preventDefault();
+
+      var lmj_r = lmj_viewer.getBoundingClientRect();
+      var lmj_d = lmj_dist(e.touches[0], e.touches[1]);
+      var lmj_m = lmj_mid(e.touches[0], e.touches[1]);
+
+      var lmj_raw = lmj_pinchStartScale * (lmj_d / lmj_pinchStartDist);
+      // 超过 1～4 倍只跟 22%，松手回弹，避免硬碰硬
+      var lmj_s = lmj_raw;
+      if (lmj_s > lmj_MAX) lmj_s = lmj_MAX + (lmj_s - lmj_MAX) * 0.22;
+      if (lmj_s < lmj_MIN) lmj_s = lmj_MIN - (lmj_MIN - lmj_s) * 0.22;
+
+      var lmj_x = (lmj_m.x - lmj_r.left) - lmj_pinchPointX * lmj_s;
+      var lmj_y = (lmj_m.y - lmj_r.top)  - lmj_pinchPointY * lmj_s;
+
+      var lmj_p = lmj_limitSoft(lmj_s, lmj_x, lmj_y);
+      lmj_render(lmj_s, lmj_p.x, lmj_p.y);
+      return;
+    }
+
+    if (lmj_mode === 'drag' && e.touches.length === 1) {
+      if (lmj_scale <= 1.001) return; // 1x 时不允许拖出边界
+
+      e.preventDefault();
+
+      var lmj_x1 = e.touches[0].clientX;
+      var lmj_y1 = e.touches[0].clientY;
+      var lmj_dx = lmj_x1 - lmj_dragStartX;
+      var lmj_dy = lmj_y1 - lmj_dragStartY;
+
+      var lmj_p2 = lmj_limitSoft(lmj_scale, lmj_dragStartTx + lmj_dx, lmj_dragStartTy + lmj_dy);
+      lmj_render(lmj_scale, lmj_p2.x, lmj_p2.y);
+
+      // 记录速度（px/ms），用于松手后的惯性
+      var lmj_now = Date.now();
+      if (lmj_now > lmj_lastT) {
+        lmj_velX = (lmj_x1 - lmj_lastX) / (lmj_now - lmj_lastT);
+        lmj_velY = (lmj_y1 - lmj_lastY) / (lmj_now - lmj_lastT);
+      }
+      lmj_lastX = lmj_x1;
+      lmj_lastY = lmj_y1;
+      lmj_lastT = lmj_now;
+    }
+  }, { passive: false });
+
+  // ---------- touchend ----------
+  lmj_viewer.addEventListener('touchend', function (e) {
+
+    if (e.touches.length === 1) {
+      // 双指抬起一根：剩下的手指接着拖动
+      lmj_mode = 'drag';
+      lmj_dragStartX = e.touches[0].clientX;
+      lmj_dragStartY = e.touches[0].clientY;
+      lmj_dragStartTx = lmj_tx;
+      lmj_dragStartTy = lmj_ty;
+      lmj_lastX = lmj_dragStartX;
+      lmj_lastY = lmj_dragStartY;
+      lmj_lastT = Date.now();
+      lmj_velX = 0;
+      lmj_velY = 0;
+      return;
+    }
+
+    if (e.touches.length > 0) return;
+
+    var lmj_wasMode = lmj_mode;
+    lmj_mode = 'none';
+
+    // 双指结束：把超界的倍数/位移缓动回合法范围
+    if (lmj_wasMode === 'pinch') {
+      var lmj_s2 = lmj_clampScale(lmj_scale);
+      lmj_animate(true);
+      lmj_apply(lmj_s2, lmj_tx, lmj_ty);
+      return;
+    }
+
+    // 单指结束
+    if (Date.now() - lmj_lastT > 120) { lmj_velX = 0; lmj_velY = 0; }
+
+    lmj_animate(true);                  // 回弹用过渡
+    lmj_apply(lmj_scale, lmj_tx, lmj_ty); // 先收进边界
+    lmj_startInertia(lmj_velX, lmj_velY); // 再按速度惯性滑动（内部会夹紧）
+
+    // ---- 单击 / 双击 ----
+    var lmj_end = e.changedTouches[0];
+    var lmj_move = Math.hypot(lmj_end.clientX - lmj_tapStartX,
+                              lmj_end.clientY - lmj_tapStartY);
+
+    if (lmj_move > 12 || Date.now() - lmj_tapStartTime > 250) {
+      lmj_lastTapTime = 0;
+      return;
+    }
+
+    var lmj_now = Date.now();
+
+    if (lmj_now - lmj_lastTapTime < 300) {
+      lmj_stopInertia();
+
+      var lmj_r = lmj_viewer.getBoundingClientRect();
+      var lmj_fx = lmj_end.clientX - lmj_r.left;
+      var lmj_fy = lmj_end.clientY - lmj_r.top;
+      var lmj_target = lmj_scale > 1.2 ? 1 : 2;
+
+      lmj_animate(true);
+
+      if (lmj_target === 1) {
+        lmj_apply(1, 0, 0);           // 回到 1x 自动居中
+      } else {
+        // 以点击位置为基准放大，该点在屏幕上保持不动
+        var lmj_px = (lmj_fx - lmj_tx) / lmj_scale;
+        var lmj_py = (lmj_fy - lmj_ty) / lmj_scale;
+        lmj_apply(lmj_target,
+          lmj_fx - lmj_px * lmj_target,
+          lmj_fy - lmj_py * lmj_target);
+      }
+
+      lmj_lastTapTime = 0;
+    } else {
+      lmj_lastTapTime = lmj_now;
+    }
+  }, { passive: true });
+
+  lmj_viewer.addEventListener('touchcancel', function () {
+    lmj_mode = 'none';
+    lmj_lastTapTime = 0;
+    lmj_animate(true);
+    lmj_apply(lmj_scale, lmj_tx, lmj_ty);
+  }, { passive: true });
+
+  // ---------- 复位按钮 ----------
+  document.getElementById('lmj_reset').addEventListener('click', function () {
+    lmj_stopInertia();
+    lmj_animate(true);
+    lmj_apply(1, 0, 0);
+  });
+
+  // ---------- 横竖屏：保留倍数，重新夹紧边界 ----------
+  window.addEventListener('resize', function () {
+    lmj_stopInertia();
+    lmj_animate(false);
+    lmj_apply(lmj_scale, lmj_tx, lmj_ty);
+  });
+
+  // ---------- 图片加载状态 ----------
+  lmj_img.addEventListener('load', function () {
+    lmj_img.classList.add('lmj_img--ready');
+    if (lmj_skeleton) lmj_skeleton.style.display = 'none';
+  });
+
+  lmj_img.addEventListener('error', function () {
+    if (lmj_skeleton) lmj_skeleton.style.display = 'none';
+    lmj_err.hidden = false;
+  });
+
+  if (lmj_img.complete && lmj_img.naturalWidth > 0) {
+    lmj_img.classList.add('lmj_img--ready');
+    if (lmj_skeleton) lmj_skeleton.style.display = 'none';
+  }
+
+  // 初始化
+  lmj_apply(1, 0, 0);
+})();
+</script>
+</body>
+</html>

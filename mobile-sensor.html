@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<!--
+  文件：mobile-sensor.html
+  课程：高级网页设计 · 移动端触摸事件（2026-2027-1）
+  任务四：摇一摇抽今日菜谱（⭐⭐⭐⭐）
+  姓名：梁铭巨    学号：24002120401
+  命名前缀：lmj_
+  说明：devicemotion + accelerationIncludingGravity 判定摇动；无传感器/无权限时自动降级为按钮抽取。
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>任务四 · 摇一摇抽菜谱</title>
+<style>
+  :root {
+    --lmj_bg: #08060f;
+    --lmj_text: #f7f4ff;
+    --lmj_muted: #9d94b8;
+    --lmj_line: rgba(255, 255, 255, .09);
+    --lmj_violet: #a78bfa;
+    --lmj_gold: #ffc46b;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body { margin: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: 30px 18px calc(30px + env(safe-area-inset-bottom));
+    background: var(--lmj_bg);
+    color: var(--lmj_text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: -12vh;
+    left: -10vw;
+    width: 120vw;
+    height: 64vh;
+    background:
+      radial-gradient(50% 50% at 50% 16%, rgba(124, 92, 255, .28), transparent 70%),
+      radial-gradient(36% 36% at 84% 6%, rgba(255, 164, 80, .16), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  [hidden] { display: none !important; }
+
+  .lmj_page {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .lmj_kicker {
+    margin: 0 0 10px;
+    font-size: 11px;
+    letter-spacing: .3em;
+    color: var(--lmj_violet);
+  }
+
+  .lmj_title {
+    margin: 0 0 10px;
+    font-size: 31px;
+    line-height: 1.2;
+    background: linear-gradient(100deg, #ffffff 10%, #cfc0ff 55%, var(--lmj_gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lmj_sub {
+    margin: 0 0 6px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--lmj_muted);
+  }
+
+  /* ---------- 摇一摇主视觉 ---------- */
+  .lmj_hero {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 12px;
+  }
+
+  .lmj_orb {
+    position: relative;
+    width: 156px;
+    height: 156px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lmj_orb_ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, .22);
+    animation: lmj_spin 16s linear infinite;
+  }
+
+  .lmj_orb_ring--inner {
+    inset: 16px;
+    border-style: solid;
+    border-color: rgba(255, 255, 255, .12);
+    animation-direction: reverse;
+    animation-duration: 22s;
+  }
+
+  @keyframes lmj_spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .lmj_orb_core {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .5), transparent 42%),
+      linear-gradient(150deg, #8a6fff 0%, #4c2fd6 55%, #241063 100%);
+    box-shadow:
+      0 24px 50px -12px rgba(110, 80, 255, .65),
+      inset 0 1px 0 rgba(255, 255, 255, .5);
+  }
+
+  .lmj_orb_core span {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: rgba(255, 255, 255, .95);
+    text-shadow: 0 4px 18px rgba(0, 0, 0, .35);
+  }
+
+  /* 摇动反馈 */
+  .lmj_orb--shake .lmj_orb_core {
+    animation: lmj_shake .62s cubic-bezier(.36, .07, .19, .97);
+  }
+
+  .lmj_orb--shake .lmj_orb_ring {
+    animation: lmj_spin 16s linear infinite, lmj_flash .62s ease-out;
+  }
+
+  @keyframes lmj_shake {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    15% { transform: rotate(-9deg) scale(1.04); }
+    35% { transform: rotate(8deg) scale(1.06); }
+    55% { transform: rotate(-6deg) scale(1.03); }
+    75% { transform: rotate(4deg) scale(1.02); }
+  }
+
+  @keyframes lmj_flash {
+    0% { box-shadow: 0 0 0 0 rgba(255, 196, 107, .5); }
+    100% { box-shadow: 0 0 0 26px rgba(255, 196, 107, 0); }
+  }
+
+  /* ---------- 状态提示 ---------- */
+  .lmj_status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 4px 0 18px;
+    font-size: 12px;
+    letter-spacing: .04em;
+    color: #a99fc4;
+    text-align: center;
+  }
+
+  .lmj_status_dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7c719c;
+    flex: 0 0 auto;
+    transition: background .3s ease;
+  }
+
+  .lmj_status--ok .lmj_status_dot { background: #5be0a0; box-shadow: 0 0 10px #5be0a0; }
+  .lmj_status--warn { color: #ffb4a8; }
+  .lmj_status--warn .lmj_status_dot { background: #ff8a75; box-shadow: 0 0 10px rgba(255, 138, 117, .7); }
+
+  /* ---------- 结果面板 ---------- */
+  .lmj_panel {
+    position: relative;
+    padding: 20px;
+    border-radius: 24px;
+    border: 1px solid var(--lmj_line);
+    background:
+      linear-gradient(160deg, rgba(76, 54, 140, .42) 0%, rgba(16, 12, 28, .92) 62%);
+    box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .9);
+    overflow: hidden;
+  }
+
+  .lmj_panel::after {
+    content: "";
+    position: absolute;
+    top: -70px;
+    right: -60px;
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 196, 107, .18), transparent 70%);
+    pointer-events: none;
+  }
+
+  .lmj_result {
+    position: relative;
+    padding: 22px 18px;
+    border-radius: 18px;
+    background: rgba(6, 4, 13, .55);
+    border: 1px solid rgba(255, 255, 255, .07);
+    min-height: 156px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .lmj_result::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 70% at 100% 0%, rgba(255, 196, 107, .12), transparent 60%);
+    pointer-events: none;
+  }
+
+  .lmj_result-label {
+    margin: 0 0 10px;
+    font-size: 10px;
+    letter-spacing: .32em;
+    color: #8a7dbb;
+  }
+
+  .lmj_result-name {
+    margin: 0 0 8px;
+    font-size: 33px;
+    line-height: 1.25;
+    letter-spacing: .03em;
+  }
+
+  .lmj_result-desc {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #c3b9e0;
+  }
+
+  .lmj_result-tag {
+    align-self: flex-start;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 196, 107, .4);
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: var(--lmj_gold);
+  }
+
+  .lmj_pop {
+    animation: lmj_pop .5s cubic-bezier(.2, 1.3, .4, 1);
+  }
+
+  @keyframes lmj_pop {
+    0% { transform: translateY(12px) scale(.94); opacity: .15; filter: blur(4px); }
+    60% { transform: translateY(0) scale(1.02); opacity: 1; filter: blur(0); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* ---------- 按钮 ---------- */
+  .lmj_actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .lmj_btn {
+    flex: 1;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    background: rgba(255, 255, 255, .05);
+    color: var(--lmj_text);
+    font-size: 14px;
+    font-family: inherit;
+    letter-spacing: .04em;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+  }
+
+  .lmj_btn:active {
+    transform: scale(.97);
+    background: rgba(255, 255, 255, .12);
+  }
+
+  .lmj_btn--primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #8a6fff, #5b3ee8);
+    box-shadow: 0 12px 28px -10px rgba(110, 80, 255, .8);
+  }
+
+  .lmj_btn--primary:active {
+    background: linear-gradient(135deg, #7c61ee, #4a2fd0);
+  }
+
+  .lmj_meter {
+    margin: 14px 0 0;
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: #6f6589;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .lmj_meter b {
+    font-weight: 500;
+    color: #a79dc6;
+  }
+
+  /* ---------- 说明 ---------- */
+  .lmj_note {
+    margin: 22px 4px 0;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px dashed var(--lmj_line);
+    font-size: 12px;
+    line-height: 1.95;
+    color: #8a819f;
+  }
+
+  .lmj_note h2 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    letter-spacing: .1em;
+    color: #b5a9dc;
+  }
+
+  .lmj_note p { margin: 0 0 10px; }
+  .lmj_note p:last-child { margin-bottom: 0; }
+
+  .lmj_code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, .08);
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11px;
+    color: #cfc6ff;
+  }
+
+  .lmj_sign {
+    margin: 14px 4px 0;
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: #635a7d;
+  }
+</style>
+</head>
+<body>
+
+<div class="lmj_page">
+  <header>
+    <p class="lmj_kicker">TASK 04 · SENSOR</p>
+    <h1 class="lmj_title">摇一摇 · 今日菜谱</h1>
+    <p class="lmj_sub">摇一摇手机，抽一道今日菜谱。传感器必须在真机上测，电脑浏览器会自动降级。</p>
+  </header>
+
+  <div class="lmj_hero">
+    <div class="lmj_orb" id="lmj_orb">
+      <div class="lmj_orb_ring"></div>
+      <div class="lmj_orb_ring lmj_orb_ring--inner"></div>
+      <div class="lmj_orb_core"><span>摇</span></div>
+    </div>
+  </div>
+
+  <p class="lmj_status" id="lmj_status">
+    <span class="lmj_status_dot"></span>
+    <span id="lmj_statusText">正在检测设备传感器…</span>
+  </p>
+
+  <section class="lmj_panel">
+    <div class="lmj_result" id="lmj_result">
+      <p class="lmj_result-label">今日菜谱</p>
+      <p class="lmj_result-name" id="lmj_name">摇一摇试试</p>
+      <p class="lmj_result-desc" id="lmj_desc">用手机连续摇动两下，即可抽取一道菜。</p>
+      <span class="lmj_result-tag" id="lmj_tag">等待抽取</span>
+    </div>
+
+    <div class="lmj_actions">
+      <!-- iOS 13+ 必须在用户点击后申请体感权限 -->
+      <button class="lmj_btn lmj_btn--primary" id="lmj_permit" type="button" hidden>开启体感权限</button>
+      <!-- 降级方案：没有传感器 / 没有权限时用按钮抽取 -->
+      <button class="lmj_btn" id="lmj_manual" type="button" hidden>点我抽一次</button>
+    </div>
+
+    <p class="lmj_meter">合成加速度 <b id="lmj_mag">--</b> m/s² · 阈值 18</p>
+  </section>
+
+  <section class="lmj_note">
+    <h2>为什么必须做降级</h2>
+    <p>桌面浏览器、部分安卓机、iOS 未授权时，<span class="lmj_code">devicemotion</span> 要么根本不触发，要么事件里没有数据。只等摇动的话，页面会一直停在初始状态，用户以为"坏了"。</p>
+    <p>所以：先判断是否支持 → 再设 1.5 秒无数据兜底 → 最后始终留一个"点我抽一次"按钮，任何设备都能抽到菜。</p>
+    <h2>两个加速度的区别</h2>
+    <p><span class="lmj_code">accelerationIncludingGravity</span>：含重力，静置时合成值约 9.8 m/s²，摇动时变化明显，适合"摇一摇"这类整体晃动判断。</p>
+    <p><span class="lmj_code">acceleration</span>：已剔除重力，静置时约 0，只反映用户主动施加的线性加速度，更适合计步、判断动作方向等精细场景。</p>
+  </section>
+
+  <p class="lmj_sign">梁铭巨 · 24002120401 · 高级网页设计</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var lmj_status     = document.getElementById('lmj_status');
+  var lmj_statusText = document.getElementById('lmj_statusText');
+  var lmj_name       = document.getElementById('lmj_name');
+  var lmj_desc       = document.getElementById('lmj_desc');
+  var lmj_tag        = document.getElementById('lmj_tag');
+  var lmj_result     = document.getElementById('lmj_result');
+  var lmj_orb        = document.getElementById('lmj_orb');
+  var lmj_manual     = document.getElementById('lmj_manual');
+  var lmj_permit     = document.getElementById('lmj_permit');
+  var lmj_magEl      = document.getElementById('lmj_mag');
+
+  var lmj_dishes = [
+    { name: '北京烤鸭', tag: '京菜', desc: '果木挂炉烤制，片鸭卷饼，皮脆肉香。' },
+    { name: '麻婆豆腐', tag: '川菜', desc: '麻辣烫香酥嫩鲜活，一勺盖饭最踏实。' },
+    { name: '广式虾饺', tag: '粤菜', desc: '澄面皮薄透光，整只鲜虾爽滑弹牙。' },
+    { name: '兰州牛肉面', tag: '陇菜', desc: '一清二白三红四绿五黄，汤清面筋。' },
+    { name: '剁椒鱼头', tag: '湘菜', desc: '鲜辣下饭，汤汁拌面一绝。' },
+    { name: '蟹粉小笼包', tag: '苏点', desc: '皮薄汁多，先开窗后喝汤，小心烫口。' },
+    { name: '潮汕牛肉丸', tag: '潮汕', desc: '手打上千次，弹到能跳起来。' },
+    { name: '扬州炒饭', tag: '淮扬', desc: '粒粒分明，虾仁火腿青豆配色分明。' }
+  ];
+
+  var lmj_THRESHOLD = 18;     // 合成加速度阈值（m/s²）
+  var lmj_COOLDOWN  = 1500;   // 摇动冷却，1.5 秒内只触发一次
+
+  var lmj_lastShake = 0;
+  var lmj_hasData = false;
+  var lmj_listening = false;
+  var lmj_lastIndex = -1;
+
+  // 摇动 / 抽奖时给主视觉一点反馈
+  function lmj_flashOrb() {
+    lmj_orb.classList.remove('lmj_orb--shake');
+    void lmj_orb.offsetWidth; // 强制回流，让动画可重复播放
+    lmj_orb.classList.add('lmj_orb--shake');
+  }
+
+  function lmj_setStatus(text, type) {
+    lmj_statusText.textContent = text;
+    lmj_status.classList.remove('lmj_status--warn', 'lmj_status--ok');
+    if (type) lmj_status.classList.add('lmj_status--' + type);
+  }
+
+  /* 抽一道菜并播放弹出动画 */
+  function lmj_pick() {
+    var lmj_i = Math.floor(Math.random() * lmj_dishes.length);
+    if (lmj_dishes.length > 1 && lmj_i === lmj_lastIndex) {
+      lmj_i = (lmj_i + 1) % lmj_dishes.length;
+    }
+    lmj_lastIndex = lmj_i;
+
+    lmj_name.textContent = lmj_dishes[lmj_i].name;
+    lmj_desc.textContent = lmj_dishes[lmj_i].desc;
+    lmj_tag.textContent  = lmj_dishes[lmj_i].tag;
+
+    lmj_result.classList.remove('lmj_pop');
+    void lmj_result.offsetWidth;
+    lmj_result.classList.add('lmj_pop');
+
+    lmj_flashOrb();
+  }
+
+  /* 降级：提示 + 露出按钮 */
+  function lmj_fallback(msg) {
+    lmj_setStatus(msg, 'warn');
+    lmj_manual.hidden = false;
+  }
+
+  /* 摇动判定：合成加速度 = √(x² + y² + z²) */
+  function lmj_onMotion(e) {
+    var lmj_a = e.accelerationIncludingGravity;
+
+    // 部分桌面浏览器会触发事件但数据是 null，必须挡掉
+    if (!lmj_a || lmj_a.x === null || lmj_a.x === undefined) return;
+
+    lmj_hasData = true;
+
+    var lmj_mag = Math.sqrt(
+      lmj_a.x * lmj_a.x +
+      lmj_a.y * lmj_a.y +
+      lmj_a.z * lmj_a.z
+    );
+
+    lmj_magEl.textContent = lmj_mag.toFixed(1);
+
+    var lmj_now = Date.now();
+    if (lmj_mag > lmj_THRESHOLD && lmj_now - lmj_lastShake > lmj_COOLDOWN) {
+      lmj_lastShake = lmj_now;
+      lmj_pick();
+      lmj_setStatus('检测到摇动，已为你抽一道菜', 'ok');
+    }
+  }
+
+  function lmj_startListening() {
+    if (lmj_listening) return;
+    lmj_listening = true;
+
+    window.addEventListener('devicemotion', lmj_onMotion);
+
+    // 1.5 秒内一条有效数据都没有：判定为不支持
+    setTimeout(function () {
+      if (!lmj_hasData) lmj_fallback('当前设备不支持，请用手机打开');
+    }, 1500);
+  }
+
+  /* 初始化：能力检测 -> 权限 -> 监听 */
+  function lmj_init() {
+    // ① 浏览器不认识这个事件
+    if (!('DeviceMotionEvent' in window)) {
+      lmj_fallback('当前设备不支持，请用手机打开');
+      return;
+    }
+
+    // ② iOS 13+ 需要用户点击后申请权限
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      lmj_setStatus('iOS 设备需要先开启体感权限', 'warn');
+      lmj_permit.hidden = false;
+      return;
+    }
+
+    // ③ 其他设备直接监听
+    lmj_setStatus('正在等待摇晃…（摇一摇手机试试）');
+    lmj_startListening();
+  }
+
+  lmj_permit.addEventListener('click', function () {
+    DeviceMotionEvent.requestPermission().then(function (lmj_state) {
+      lmj_permit.hidden = true;
+      if (lmj_state === 'granted') {
+        lmj_setStatus('已授权，摇一摇手机试试');
+        lmj_startListening();
+      } else {
+        lmj_fallback('未获得体感权限，可点下方按钮抽取');
+      }
+    }).catch(function () {
+      lmj_permit.hidden = true;
+      lmj_fallback('权限申请失败，可点下方按钮抽取');
+    });
+  });
+
+  // 降级按钮：任何设备都能抽
+  lmj_manual.addEventListener('click', function () {
+    lmj_pick();
+    lmj_setStatus('已手动抽取一道菜');
+  });
+
+  lmj_init();
+})();
+</script>
+</body>
+</html>
