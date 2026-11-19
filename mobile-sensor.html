@@ -183,7 +183,17 @@
       <div class="lmj_acc-fill" id="lmj_accFill"></div>
     </div>
     <div style="font-size:9px;color:rgba(0,0,0,0.35);margin-top:2px;">
-      阈值线 ─────────── 18 m/s² ─────────── 超过触发
+      触发线 13 m/s²（超过 + 变化量 Δ&gt;9 任一条即触发）
+    </div>
+
+    <div class="lmj_accept-row" style="margin-top:8px;">
+      <span>数据源 / 事件数</span>
+      <span><b id="lmj_srcText">未收到</b></span>
+    </div>
+
+    <div class="lmj_accept-row">
+      <span>变化量 Δ / 峰值</span>
+      <span><b id="lmj_deltaText">0.0 / 0.0</b></span>
     </div>
 
     <div class="lmj_accept-row" style="margin-top:8px;">
@@ -207,9 +217,9 @@
     <!-- 验收④：加速度区别说明 -->
     <div class="lmj_acc-diff">
       <b style="color:#ef476f;">验收④ 答辩准备 —— 两个 acceleration 的区别</b><br>
-      • <code>accelerationIncludingGravity</code> —— <b>含重力</b>，静止时 ≈ 9.8（设备平放），摇动时叠加起来 > 18 好判断<br>
-      • <code>acceleration</code> —— <b>去掉重力</b>，静止时 ≈ 0，需要低通滤波才能用<br>
-      我们用 <code>accelerationIncludingGravity</code> + 阈值 18，<b>更简单、更稳定</b>
+      • <code>accelerationIncludingGravity</code> —— <b>含重力</b>，静止时 ≈ 9.8（设备平放），摇动时叠加到 13+ 即可判断<br>
+      • <code>acceleration</code> —— <b>去掉重力</b>，静止时 ≈ 0，摇动时 &gt; 7 即可判断<br>
+      两者<b>同时读取、三重判定</b>，任一源失效都能兜底
     </div>
   </div>
 
@@ -260,16 +270,21 @@
       { name: '火锅',       emoji: '🍲', tag: '聚餐首选', desc: '心情不好吃火锅，心情好更要吃火锅。' }
     ];
 
-    var lmj_THRESHOLD = 18;       // 验收①阈值
+    var lmj_THRESHOLD = 13;       // 绝对加速度触发线（静止≈9.8，轻摇可到 13）
+    var lmj_DELTA     = 9;        // 相邻采样变化量触发线（最灵敏，不依赖含不含重力）
+    var lmj_LINEAR    = 7;        // 去重力 acceleration 合成触发线（静止≈0）
     var lmj_COOLDOWN  = 1500;    // 验收①冷却
     var lmj_cd_end = 0;
     var lmj_cd_tick = null;
+    var lmj_evtCount = 0, lmj_lastG = 0, lmj_peakG = 0, lmj_zeroStreak = 0;
 
     // UI
     var lmj_shake = document.getElementById('lmj_shake');
     var lmj_status = document.getElementById('lmj_status');
     var lmj_accText = document.getElementById('lmj_accText');
     var lmj_accFill = document.getElementById('lmj_accFill');
+    var lmj_srcText = document.getElementById('lmj_srcText');
+    var lmj_deltaText = document.getElementById('lmj_deltaText');
     var lmj_cdText = document.getElementById('lmj_cdText');
     var lmj_cdFill = document.getElementById('lmj_cdFill');
     var lmj_sensorText = document.getElementById('lmj_sensorText');
@@ -317,11 +332,20 @@
       }, 20);
     }
 
-    // 函数功能：合成加速度勾股定理（验收④用 accelerationIncludingGravity）
-    function lmj_accel(data) {
-      var a = data.accelerationIncludingGravity;
-      if (!a) return null;
-      return Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+    // 函数功能：双源读取加速度 —— 优先含重力，全 0 时退到去重力
+    function lmj_readAccel(data) {
+      var g = 0, linear = 0, src = '';
+      var aig = data.accelerationIncludingGravity;
+      if (aig && typeof aig.x === 'number') {
+        g = Math.sqrt((aig.x||0)*(aig.x||0) + (aig.y||0)*(aig.y||0) + (aig.z||0)*(aig.z||0));
+        if (g > 0.01) src = 'gravity';
+      }
+      var lin = data.acceleration;
+      if (lin && typeof lin.x === 'number') {
+        linear = Math.sqrt((lin.x||0)*(lin.x||0) + (lin.y||0)*(lin.y||0) + (lin.z||0)*(lin.z||0));
+      }
+      if (!src && linear > 0.01) src = 'linear';
+      return { g: g, linear: linear, src: src };
     }
 
     // ===== 主入口：初始化传感器（验收②③）=====
@@ -363,29 +387,68 @@
       lmj_listen();
     }
 
-    // 函数功能：正式监听 devicemotion + 验收①阈值判断
+    // 函数功能：正式监听 devicemotion —— 双源 + 三重 OR 判定（绝对/变化量/去重力）
     function lmj_listen() {
+      if (lmj_listen.done) return;
+      lmj_listen.done = true;
+
       window.addEventListener('devicemotion', function (e) {
-        var a = lmj_accel(e);
-        if (a === null) return;
+        lmj_evtCount++;
+        var r = lmj_readAccel(e);
 
-        // 实时 meter
-        var pct = Math.min(100, (a / (lmj_THRESHOLD * 1.5)) * 100);
+        // 两个源都无效 → 统计全 0 次数
+        if (!r.src) {
+          lmj_zeroStreak++;
+          if (lmj_zeroStreak === 15) {
+            lmj_srcText.innerHTML = '<b style="color:#ef476f;">上报全 0</b>';
+            lmj_permText.innerHTML = '<b style="color:#ef476f;">设备不支持</b>';
+            lmj_fallback.classList.add('lmj_show');
+          }
+          return;
+        }
+        lmj_zeroStreak = 0;
+
+        if (lmj_evtCount === 1) lmj_lastG = r.g;   // 第一次只取基准，避免 Δ 误触发
+        var delta = Math.abs(r.g - lmj_lastG);
+        lmj_lastG = r.g;
+        if (r.g > lmj_peakG) lmj_peakG = r.g;
+
+        // —— 实时读数 ——
+        var pct = Math.min(100, (r.g / (lmj_THRESHOLD * 1.6)) * 100);
         lmj_accFill.style.width = pct + '%';
-        lmj_accText.innerHTML = a.toFixed(1) + ' m/s²';
+        lmj_accFill.style.background = pct >= 62 ? '#ff9f1c' : '#06d6a0';
+        lmj_accText.innerHTML = r.g.toFixed(1) + ' m/s²';
+        lmj_srcText.innerHTML = '<b style="color:#06d6a0;">' + (r.src === 'gravity' ? '含重力' : '去重力') + ' · ' + lmj_evtCount + ' 次</b>';
+        lmj_deltaText.innerHTML = '<b>' + delta.toFixed(1) + ' / ' + lmj_peakG.toFixed(1) + '</b>';
 
-        // 验收①：冷却内不触发
+        // 冷却中
         if (Date.now() < lmj_cd_end) { lmj_status.textContent = '冷却中…'; return; }
 
-        // 验收①：超过阈值触发
-        if (a > lmj_THRESHOLD) {
-          lmj_status.textContent = '🎉 摇动检测到！加速度 ' + a.toFixed(1);
+        // —— 三重 OR 判定 ——
+        if (r.g > lmj_THRESHOLD || delta > lmj_DELTA || r.linear > lmj_LINEAR) {
+          lmj_status.textContent = '🎉 摇动检测到！g=' + r.g.toFixed(1) + '  Δ=' + delta.toFixed(1);
+          if (navigator.vibrate) { try { navigator.vibrate(60); } catch (err) {} }
           lmj_pickDish();
           lmj_startCooldown();
+        } else if (lmj_evtCount % 60 === 0 && lmj_peakG < lmj_THRESHOLD + 2) {
+          lmj_status.textContent = '📳 传感器正常，峰值仅 ' + lmj_peakG.toFixed(1) + '，请再用力摇';
         }
       }, false);
 
-      lmj_status.textContent = '✅ 传感器已就绪，摇一摇试试！';
+      lmj_status.textContent = '✅ 传感器已就绪，用力摇一摇试试！';
+
+      // 6 秒内仍无有效加速度（峰值仍为 0）→ 明确降级，避免用户以为"没效果"
+      setTimeout(function () {
+        if (lmj_peakG === 0) {
+          lmj_srcText.innerHTML = '<b style="color:#ef476f;">6 秒无数据</b>';
+          lmj_status.textContent = '⚠️ 未收到加速度数据，可能需 HTTPS 或设备不支持';
+          lmj_fallback.classList.add('lmj_show');
+          if (!lmj_fallbackBtn.lmjBound) {
+            lmj_fallbackBtn.lmjBound = true;
+            lmj_fallbackBtn.addEventListener('click', lmj_pickDish);
+          }
+        }
+      }, 6000);
     }
 
     lmj_init();

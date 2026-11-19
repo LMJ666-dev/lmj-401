@@ -247,6 +247,33 @@
     .lmj_s-status { font-size: 12px; color: #78829a; margin-top: 14px; text-align: center; }
     .lmj_s-status.lmj_warn { color: #ffd166; }
     .lmj_s-meta { font-size: 12px; color: #78829a; margin-top: 10px; text-align: center; }
+
+    /* ===== 摇一摇实时诊断面板 ===== */
+    .lmj_diag {
+      max-width: 420px; margin: 12px auto 0;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .lmj_diag-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; padding: 3px 0;
+    }
+    .lmj_diag-k { color: #78829a; letter-spacing: 1px; }
+    .lmj_diag-v { color: #7ee8fa; font-family: Consolas, monospace; font-weight: 600; }
+    .lmj_diag-meter {
+      position: relative; height: 8px; margin-top: 8px;
+      background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden;
+    }
+    .lmj_diag-fill {
+      position: absolute; inset: 0 auto 0 0; width: 0%;
+      background: linear-gradient(90deg, #7ee8fa, #80ffdb);
+      border-radius: 4px; transition: width .06s linear;
+    }
+    .lmj_diag-line {
+      position: absolute; top: -3px; bottom: -3px; width: 2px;
+      background: #ffd166; opacity: .85; left: 52%;
+    }
   </style>
 </head>
 <body>
@@ -357,9 +384,39 @@
     </div>
 
     <div class="lmj_s-status" id="lmj_t_status">正在等待传感器数据…</div>
+
+    <!-- 实时诊断面板：让用户看清传感器到底有没有在工作 -->
+    <div class="lmj_diag" id="lmj_diag">
+      <div class="lmj_diag-row">
+        <span class="lmj_diag-k">数据源</span>
+        <span class="lmj_diag-v" id="lmj_diag_src">未收到</span>
+      </div>
+      <div class="lmj_diag-row">
+        <span class="lmj_diag-k">事件数</span>
+        <span class="lmj_diag-v" id="lmj_diag_cnt">0 次</span>
+      </div>
+      <div class="lmj_diag-row">
+        <span class="lmj_diag-k">当前加速度</span>
+        <span class="lmj_diag-v" id="lmj_diag_g">0.0</span>
+      </div>
+      <div class="lmj_diag-row">
+        <span class="lmj_diag-k">变化量 Δ</span>
+        <span class="lmj_diag-v" id="lmj_diag_d">0.0</span>
+      </div>
+      <div class="lmj_diag-meter">
+        <div class="lmj_diag-fill" id="lmj_diag_fill"></div>
+        <div class="lmj_diag-line" id="lmj_diag_line"></div>
+      </div>
+      <div class="lmj_diag-row" style="margin-top:6px;">
+        <span class="lmj_diag-k">峰值 / 触发线</span>
+        <span class="lmj_diag-v" id="lmj_diag_peak">0.0 / 13.0</span>
+      </div>
+    </div>
+
     <div style="text-align:center;margin-top:12px;">
       <button class="lmj_btn" id="lmj_s_draw">🎲 点我抽一次</button>
-      <button class="lmj_btn lmj_ghost" id="lmj_t_auth" style="display:none;">授权传感器</button>
+      <button class="lmj_btn lmj_ghost" id="lmj_t_auth" style="display:none;">🔐 授权传感器</button>
+      <button class="lmj_btn lmj_ghost" id="lmj_t_retry" style="display:none;">重新监听</button>
     </div>
     <p class="lmj_s-meta" id="lmj_s_meta">摇一摇抽一道菜 · 左右倾斜看视差</p>
 
@@ -459,7 +516,10 @@
       lmj_g_index = i;
       lmj_g_track.style.transform = 'translateX(' + (-i * 100) + '%)';
       lmj_g_num.textContent = i + 1;
-      lmj_g_dots.forEach(function (d, idx) { d.classList.toggle('lmj_on', idx === i); });
+      // lmj_g_dots 是容器元素，需遍历其子节点（HTMLCollection 无 forEach）
+      Array.prototype.forEach.call(lmj_g_dots.children, function (d, idx) {
+        d.classList.toggle('lmj_on', idx === i);
+      });
     }
     // 函数功能：显示边界提示 toast
     function lmj_g_showToast(msg) {
@@ -777,9 +837,32 @@
     var lmj_s_emoji = document.getElementById('lmj_s_emoji');
     var lmj_s_dish = document.getElementById('lmj_s_dish');
     var lmj_s_draw = document.getElementById('lmj_s_draw');
+    var lmj_t_retry = document.getElementById('lmj_t_retry');
+    // 诊断面板元素
+    var lmj_diagSrc  = document.getElementById('lmj_diag_src');
+    var lmj_diagCnt  = document.getElementById('lmj_diag_cnt');
+    var lmj_diagG    = document.getElementById('lmj_diag_g');
+    var lmj_diagD    = document.getElementById('lmj_diag_d');
+    var lmj_diagFill = document.getElementById('lmj_diag_fill');
+    var lmj_diagLine = document.getElementById('lmj_diag_line');
+    var lmj_diagPeak = document.getElementById('lmj_diag_peak');
 
     var lmj_t_baseGamma = 0, lmj_t_baseBeta = 0, lmj_t_gotOrient = false;
     var lmj_s_ready = false, lmj_s_permAsked = false, lmj_s_lastShake = 0;
+
+    /* —— 摇一摇检测参数（可调）—— */
+    var lmj_SHAKE_G     = 13;    // 绝对加速度触发线（静止≈9.8）
+    var lmj_SHAKE_DELTA = 8;     // 相邻采样变化量触发线（最灵敏）
+    var lmj_SHAKE_LINEAR= 7;     // 去重力 acceleration 合成触发线（静止≈0）
+    var lmj_GRAVITY     = 9.81;
+
+    var lmj_evtCount = 0;        // 收到多少次 devicemotion
+    var lmj_lastG = 0;           // 上次合成加速度
+    var lmj_peakG = 0;           // 峰值
+    var lmj_srcName = '未收到';   // 数据源类型
+    var lmj_zeroStreak = 0;      // 连续全 0 次数（判断该字段是否失效）
+    var lmj_lastEvtTime = 0;     // 上次事件时间戳（算频率）
+    var lmj_diagTimer = null;
     var lmj_s_dishes = [
       { emoji: '🍜', name: '兰州牛肉面', meta: '一清二白三红四绿五黄' },
       { emoji: '🥟', name: '韭菜猪肉饺', meta: '皮薄馅大 · 蘸醋最幸福' },
@@ -811,14 +894,17 @@
       void lmj_s_screen.offsetWidth;
       lmj_s_screen.classList.add('lmj_pop');
     }
-    // 函数功能：摇一摇触发 —— 验收① 1.5s 冷却
-    function lmj_s_trigger() {
+    // 函数功能：摇一摇触发 —— 1.5s 冷却 + 振动 + 抽菜
+    function lmj_s_trigger(g, delta, linear) {
       var now = Date.now();
       if (now - lmj_s_lastShake < 1500) return;
       lmj_s_lastShake = now;
+      lmj_t_status.classList.remove('lmj_warn');
+      lmj_t_status.textContent = '🎉 摇动触发！g=' + g.toFixed(1) + '  Δ=' + delta.toFixed(1);
+      if (navigator.vibrate) { try { navigator.vibrate(60); } catch (err) {} }
       lmj_s_drawDish();
     }
-    // 函数功能：传感器就绪提示
+    // 函数功能：传感器就绪提示（只提示一次）
     function lmj_s_readyMsg(msg) {
       if (lmj_s_ready) return;
       lmj_s_ready = true;
@@ -826,20 +912,76 @@
       lmj_t_status.textContent = msg;
       lmj_t_auth.style.display = 'none';
     }
-    // 函数功能：验收② 降级提示
+    // 函数功能：降级提示
     function lmj_s_fallback(msg) {
       lmj_t_status.classList.add('lmj_warn');
-      lmj_t_status.textContent = msg + ' —— 点「🎲 点我抽一次」，鼠标在画面上移动看视差';
+      lmj_t_status.textContent = msg + ' —— 可点「🎲 点我抽一次」，鼠标移动看视差';
       lmj_t_scene.style.cursor = 'ew-resize';
+      lmj_t_retry.style.display = 'inline-block';
     }
 
-    // 函数功能：加速度回调 —— 验收④ accelerationIncludingGravity 合成
+    /* 函数功能：加速度回调 —— 双源读取 + 变化量检测（摇一摇核心）
+       判定采用三重 OR，任意一条满足即触发：
+         ① 绝对合成加速度 g  > 13     （静止约 9.8，中等力度摇动可达）
+         ② 相邻采样变化量 Δ  > 9      （最灵敏，不依赖设备是否含重力）
+         ③ 去重力 linear     > 7      （accelerationIncludingGravity 失效时的备选源） */
     function lmj_s_onMotion(e) {
-      var a = e.accelerationIncludingGravity;
-      if (!a || a.x === null) return;
-      lmj_s_readyMsg('✅ 传感器就绪 · 摇一摇抽菜，左右倾斜看视差');
-      var g = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0));
-      if (g > 18) lmj_s_trigger();
+      lmj_evtCount++;
+      lmj_lastEvtTime = Date.now();
+
+      var aig = e.accelerationIncludingGravity;
+      var lin = e.acceleration;
+
+      var g = 0, linear = 0, src = '';
+      if (aig && typeof aig.x === 'number') {
+        g = Math.sqrt((aig.x || 0) * (aig.x || 0) + (aig.y || 0) * (aig.y || 0) + (aig.z || 0) * (aig.z || 0));
+        if (g > 0.01) src = 'gravity';
+      }
+      if (lin && typeof lin.x === 'number') {
+        linear = Math.sqrt((lin.x || 0) * (lin.x || 0) + (lin.y || 0) * (lin.y || 0) + (lin.z || 0) * (lin.z || 0));
+      }
+      // accelerationIncludingGravity 全 0 → 退到去重力 acceleration
+      if (!src && linear > 0.01) src = 'linear';
+
+      // 两种源都没有有效值 → 记录全 0 次数，15 次后明确提示设备不支持
+      if (!src) {
+        lmj_zeroStreak++;
+        if (lmj_zeroStreak === 15) {
+          lmj_diagSrc.textContent = '⚠️ 上报全 0';
+          lmj_s_fallback('设备上报的加速度全为 0，该浏览器可能不支持运动传感器');
+        }
+        return;
+      }
+      lmj_zeroStreak = 0;
+
+      // 第一次采样只做基准，避免 Δ 从 0 跳到 9.8 误触发
+      if (lmj_evtCount === 1) { lmj_lastG = g; }
+
+      var delta = Math.abs(g - lmj_lastG);
+      lmj_lastG = g;
+      if (g > lmj_peakG) lmj_peakG = g;
+
+      // —— 更新诊断面板 ——
+      lmj_diagSrc.textContent = src === 'gravity' ? '含重力' : '去重力';
+      lmj_diagCnt.textContent = lmj_evtCount + ' 次';
+      lmj_diagG.textContent = g.toFixed(1);
+      lmj_diagD.textContent = delta.toFixed(1);
+      lmj_diagPeak.textContent = lmj_peakG.toFixed(1) + ' / ' + lmj_SHAKE_G.toFixed(1);
+      var pct = Math.min(100, (g / (lmj_SHAKE_G * 1.6)) * 100);
+      lmj_diagFill.style.width = pct + '%';
+      lmj_diagFill.style.background = pct >= 62 ? 'linear-gradient(90deg,#ffd166,#ff9f1c)' : 'linear-gradient(90deg,#7ee8fa,#80ffdb)';
+
+      lmj_s_readyMsg('✅ 传感器工作正常 · 用力摇一摇抽菜，倾斜手机看视差');
+
+      // —— 三重 OR 判定 ——
+      if (g > lmj_SHAKE_G || delta > 9 || linear > lmj_SHAKE_LINEAR) {
+        lmj_s_trigger(g, delta, linear);
+      } else if (lmj_evtCount % 60 === 0 && lmj_peakG < lmj_SHAKE_G + 2) {
+        // 已收数据但峰值一直偏低 → 明确告诉用户要用力
+        if (!lmj_t_status.classList.contains('lmj_warn')) {
+          lmj_t_status.textContent = '📳 传感器正常，峰值仅 ' + lmj_peakG.toFixed(1) + '，请再用力摇';
+        }
+      }
     }
     // 函数功能：方向回调 —— 视差零点初始化
     function lmj_t_onOrient(e) {
@@ -852,7 +994,7 @@
       }
       lmj_t_apply(e.gamma - lmj_t_baseGamma, (e.beta || 0) - lmj_t_baseBeta);
     }
-    // 函数功能：验收②降级 —— 鼠标位置模拟倾斜
+    // 函数功能：降级 —— 鼠标位置模拟倾斜
     function lmj_t_mouseSim(e) {
       if (lmj_t_gotOrient) return;
       var rect = lmj_t_scene.getBoundingClientRect();
@@ -861,37 +1003,72 @@
       lmj_t_apply(rx * 30, ry * 30);
     }
 
-    // 函数功能：初始化传感器监听
-    function lmj_s_start() {
-      var hasMotion = !!window.DeviceMotionEvent;
-      var hasOrient = !!window.DeviceOrientationEvent;
-      if (!hasMotion && !hasOrient) { lmj_s_fallback('当前设备不支持传感器'); return; }
-      var needPerm =
-        (hasMotion && typeof DeviceMotionEvent.requestPermission === 'function') ||
-        (hasOrient && typeof DeviceOrientationEvent.requestPermission === 'function');
-      if (needPerm && !lmj_s_permAsked) {
-        lmj_t_auth.style.display = 'inline-block';
-        lmj_t_status.textContent = '🔐 iOS 设备需授权后才能使用摇一摇与倾斜视差';
-        return;
-      }
-      if (hasMotion)  window.addEventListener('devicemotion', lmj_s_onMotion, { passive: true });
-      if (hasOrient)  window.addEventListener('deviceorientation', lmj_t_onOrient);
-      setTimeout(function () { if (!lmj_s_ready) lmj_s_fallback('⚠️ 未收到传感器数据'); }, 2500);
+    // 函数功能：注册传感器监听（可重复调用，内部去重）
+    function lmj_bindSensors() {
+      if (lmj_bindSensors.done) return;
+      lmj_bindSensors.done = true;
+      window.addEventListener('devicemotion', lmj_s_onMotion, { passive: true });
+      window.addEventListener('deviceorientation', lmj_t_onOrient, { passive: true });
+      lmj_srcName = '监听中';
+      // 6 秒后仍无有效加速度（峰值仍为 0）→ 降级
+      setTimeout(function () {
+        if (lmj_peakG === 0) {
+          lmj_s_fallback('⚠️ 6 秒内未收到有效加速度数据（需 HTTPS / 传感器权限）');
+        }
+      }, 6000);
     }
 
-    // 验收③ iOS 授权按钮
+    // 函数功能：初始化传感器（区分 iOS 授权 / 安卓直连 / 不支持）
+    function lmj_s_start() {
+      lmj_diagLine.style.left = ((lmj_SHAKE_G / (lmj_SHAKE_G * 1.6)) * 100) + '%';
+
+      var hasMotion = (typeof DeviceMotionEvent !== 'undefined');
+      var hasOrient = (typeof DeviceOrientationEvent !== 'undefined');
+      if (!hasMotion && !hasOrient) {
+        lmj_diagSrc.textContent = 'API 不存在';
+        lmj_s_fallback('当前设备/浏览器不支持运动传感器 API');
+        return;
+      }
+
+      // iOS 13+ 需要用户手势里请求权限
+      var needPerm = (hasMotion && typeof DeviceMotionEvent.requestPermission === 'function');
+      if (needPerm && !lmj_s_permAsked) {
+        lmj_t_auth.style.display = 'inline-block';
+        lmj_diagSrc.textContent = '待授权';
+        lmj_t_status.textContent = '🔐 iOS 设备：请点下方「授权传感器」按钮开启运动权限';
+        return;
+      }
+
+      lmj_bindSensors();
+      lmj_t_status.textContent = '⏳ 已注册监听，请摇动手机…';
+    }
+
+    // 验收③ iOS 授权按钮 —— requestPermission 必须在 click 同步栈内调用
     lmj_t_auth.addEventListener('click', function () {
       lmj_s_permAsked = true;
-      var tasks = [];
-      if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function')
-        tasks.push(DeviceMotionEvent.requestPermission().catch(function () { return 'denied'; }));
-      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function')
-        tasks.push(DeviceOrientationEvent.requestPermission().catch(function () { return 'denied'; }));
-      Promise.all(tasks).then(function (res) {
-        if (res.indexOf('granted') === -1) { lmj_s_fallback('权限被拒绝，传感器不可用'); return; }
-        lmj_t_auth.style.display = 'none';
-        lmj_s_start();
+      lmj_t_auth.style.display = 'none';
+      var p = (typeof DeviceMotionEvent !== 'undefined' &&
+               typeof DeviceMotionEvent.requestPermission === 'function')
+        ? DeviceMotionEvent.requestPermission()
+        : Promise.resolve('granted');
+      p.then(function (r) {
+        if (r !== 'granted') { lmj_s_fallback('权限被拒绝，传感器不可用'); return; }
+        lmj_diagSrc.textContent = '已授权';
+        lmj_bindSensors();
+        lmj_t_status.textContent = '✅ 已授权，请摇动手机…';
+      }).catch(function () {
+        lmj_s_fallback('授权过程出错，传感器不可用');
       });
+    });
+
+    // 重新监听（授权后仍收不到数据时手动重试）
+    lmj_t_retry.addEventListener('click', function () {
+      lmj_bindSensors.done = false;
+      lmj_evtCount = 0; lmj_peakG = 0; lmj_lastG = 0; lmj_zeroStreak = 0;
+      lmj_bindSensors();
+      lmj_t_status.classList.remove('lmj_warn');
+      lmj_t_status.textContent = '🔄 已重新注册监听，请摇动手机…';
+      lmj_t_retry.style.display = 'none';
     });
 
     lmj_s_draw.addEventListener('click', function () {
@@ -900,8 +1077,9 @@
     });
     lmj_t_scene.addEventListener('mousemove', lmj_t_mouseSim);
 
-    lmj_g_init();
-    lmj_s_start();
+    // 各模块独立初始化：任一模块异常不影响其余模块
+    try { lmj_g_init(); } catch (err) { console.error('手势卡片初始化失败', err); }
+    try { lmj_s_start(); } catch (err) { console.error('传感器初始化失败', err); }
   </script>
 </body>
 </html>
