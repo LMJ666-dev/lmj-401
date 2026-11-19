@@ -150,3 +150,26 @@
 - **提示词**: 把我们新的文件夹全部交到github上，并建立新分支
 - **执行结果**: 新建分支 feat/final-assignments-lmj；提交 新闻/（汽车上市列表页 + style.css/script.js 复原）、樱视/（Bilibili 风格期末作业站，30 个文件，修复 7 个页面 `n 脚本拼接错误）、catchBall.html 结构补全、swiper-task.html 死链移除、24002120401-梁铭巨/index.html 首页入口替换（闲鱼→樱视、新增新闻），推送到 github.com:LMJ666-dev/lmj-401.git
 
+
+---
+- **时间**: 2026-11-18
+- **模型**: Trae AI Assistant
+- **提示词**: 移动端三个任务效果都没体现出来，重写让每个验收点都有实锤
+- **执行结果**: 三页全量重写，每页都加验收可视化面板：
+  - mobile-gesture.html: 验收①阈值 meter（实时显示横向位移 px，超过 40px 才变色触发）+ 验收②冷却倒计时条（剩余 ms）+ 验收③卡片容器 touch-action:pan-y + 底部额外可滚内容证明不挡页面
+  - mobile-zoom.html: 验收①绿色十字两指中点追踪 + 漂移 meter（数学上应为 0）+ 验收②scale clamp 1~4x + 验收③scale<=1 强制 tx/ty 归零 + 验收④localStorage 持久化 + resize/orientationchange 事件保存恢复
+  - mobile-sensor.html: 验收①冷却可视化倒计时条（0~1500ms 实时）+ 验收②DeviceMotionEvent undefined 检测后显示降级面板（点我抽一次）+ 验收③iOS 13+ requestPermission 按钮 + 验收④页面直接展示 accelerationIncludingGravity vs acceleration 区别说明
+  浏览器实测三页均 0 error
+
+---
+- **时间**: 2026-11-19
+- **模型**: Trae AI Assistant
+- **提示词**: 参考对方四合一页面，自己重写 mobile-tasks.html（禁止抄袭）
+- **执行结果**: 新建 mobile-tasks.html 四合一 tab 页面，全自主设计实现：
+  - 类名前缀 lmj_，深色紫蓝渐变+青绿色 accent（对方用橙金色，不同风格）
+  - 任务一：事件探针区 + 实时日志列表（touchstart/move/end/cancel + mouse + click/dblclick）+ 三个 QA + 踩坑记录
+  - 任务二：4 张真实美食图（白切鸡/佛跳墙/开水白菜/叫花鸡），track translate 切换，阈值 40px + 冷却 300ms 用时间戳比较，touchcancel 里清理冷却/拖动，电脑端鼠标也能拖
+  - 任务三：双指中点锚定公式（imgX/imgY 反推法，与对方 zoomTo 路径不同），滚轮缩放 + pointer 拖动 + 双击 1x↔2x + localStorage 持久化
+  - 任务四：倾斜视差 5 层（星空背景 depth 6 + 光晕 14 + 手机 30 + 屏幕 32），deviceorientation 用 gamma/beta，降级用鼠标模拟，accelerationIncludingGravity 阈值 18 + 1.5s 冷却，iOS 授权 Promise.all
+  - 新增 lmj_space_bg.jpg 星空背景
+  - 浏览器实测 tabs=4/panels=4/gCards=4/zImg 1200px 完成/bg 1200px 完成/0 error

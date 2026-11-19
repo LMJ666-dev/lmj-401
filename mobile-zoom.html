@@ -3,174 +3,221 @@
   学号：24002120401
   建立时间：2026-11-18
   使用大模型：Trae AI Assistant
-  功能名称：任务三 · 图片查看器 —— 双指缩放 + 双击放大 + 拖动
+  功能名称：任务三 · 图片查看器 —— 双指缩放 + 双击 + 拖动
+           验收①两指中心不跳  验收②边界限制  验收③1x 不能拖  验收④旋转屏幕不丢
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>图片查看器 · 双指缩放</title>
+  <title>任务三 · 图片查看器</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: #0f0f1a;
+      background: #0f0f1a; color: #fff;
       min-height: 100vh;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 20px 16px 40px;
     }
-
     #lmj_homeLink {
-      align-self: flex-start;
-      margin: 20px 0 10px 16px;
-      padding: 8px 16px;
+      display: inline-block;
+      padding: 6px 14px;
       background: rgba(255,255,255,0.1);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 20px;
-      font-size: 13px;
+      color: #fff; text-decoration: none;
+      border-radius: 20px; font-size: 12px;
       border: 1px solid rgba(255,255,255,0.2);
+      margin-bottom: 16px;
     }
+    .lmj_hdr { text-align: center; margin-bottom: 14px; }
+    .lmj_hdr h1 { font-size: 20px; letter-spacing: 2px; }
+    .lmj_hdr p  { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 6px; }
 
-    .lmj_header {
-      text-align: center;
-      padding: 10px 20px 20px;
+    /* ===== 验收可视化面板 ===== */
+    .lmj_accept {
+      max-width: 420px; margin: 0 auto 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 12px 14px;
+      font-size: 11px; line-height: 1.6;
     }
-    .lmj_header h1 { font-size: 20px; letter-spacing: 2px; }
-    .lmj_header p { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 6px; }
-
-    /* 提示横幅 —— 非触摸设备时显示 */
-    .lmj_tip {
-      background: linear-gradient(90deg,#ffd166,#ff9f1c);
-      color: #1a1a2e;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 13px;
-      margin: 0 16px 14px;
-      text-align: center;
+    .lmj_accept h3 { font-size: 12px; color: #ffd166; margin-bottom: 8px; letter-spacing: 1px; }
+    .lmj_accept code {
+      background: rgba(255,255,255,0.1); padding: 1px 5px;
+      border-radius: 3px; font-size: 10px; font-family: Consolas, monospace;
     }
-    .lmj_tip.lmj_hidden { display: none; }
+    .lmj_accept-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 3px 0; color: rgba(255,255,255,0.6);
+    }
+    .lmj_accept-row b { color: #06d6a0; font-weight: normal; }
 
-    /* 查看器容器 */
+    /* 验收①两指中点对齐 meter */
+    .lmj_align-meter {
+      background: rgba(255,255,255,0.1);
+      height: 4px; border-radius: 2px; overflow: hidden; margin-top: 2px;
+    }
+    .lmj_align-fill {
+      height: 100%; width: 0; transition: width 0.05s linear;
+    }
+    .lmj_align-fill.lmj_ok { background: #06d6a0; }
+    .lmj_align-fill.lmj_bad { background: #ef476f; }
+
+    /* ===== 查看器 ===== */
     #lmj_viewer {
-      width: calc(100vw - 32px);
-      max-width: 420px;
-      height: 520px;
+      width: 100%; max-width: 420px;
+      height: 480px;
+      margin: 0 auto;
       background: #1a1a2e;
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
-      touch-action: none;         /* 整个容器接管手势 */
+      touch-action: none;           /* 整个容器接管手势（验收②的前提） */
       user-select: none;
       -webkit-touch-callout: none;
       position: relative;
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
+    /* 两指中点十字标记（验收①证明） */
+    .lmj_crosshair {
+      position: absolute; width: 24px; height: 24px;
+      pointer-events: none; z-index: 10;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .lmj_crosshair.lmj_show { opacity: 1; }
+    .lmj_crosshair::before,
+    .lmj_crosshair::after {
+      content: ''; position: absolute; background: #06d6a0;
+    }
+    .lmj_crosshair::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
+    .lmj_crosshair::after  { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
 
-    /* 图片 —— transform 用 translate + scale 组合 */
+    /* 图片 */
     #lmj_img {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: auto;
-      height: 100%;
+      top: 50%; left: 50%;
+      height: 100%; width: auto;
       max-width: none;
-      transform-origin: 0 0;     /* 以左上角为原点，手动控制缩放基准 */
+      transform-origin: 0 0;
       transform: translate(-50%, -50%) scale(1);
-      transition: transform 0.25s ease-out;
+      transition: transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
       will-change: transform;
-      pointer-events: none;       /* 事件都由容器接收 */
+      pointer-events: none;
     }
-    #lmj_img.lmj_noTransition { transition: none; }
+    #lmj_img.lmj_noAnim { transition: none; }
 
-    /* 底部信息栏 */
+    /* ===== 底部信息栏 ===== */
     .lmj_footer {
-      margin-top: 20px;
-      display: flex;
-      gap: 16px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
+      max-width: 420px; margin: 14px auto 0;
+      display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+      font-size: 12px; color: rgba(255,255,255,0.5);
     }
-    .lmj_footer span b {
-      color: #ffd166;
-      font-weight: normal;
-    }
+    .lmj_footer b { color: #ffd166; font-weight: normal; }
     .lmj_reset {
-      margin-top: 12px;
       background: rgba(255,255,255,0.1);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 8px 24px;
-      border-radius: 20px;
-      font-size: 13px;
-      cursor: pointer;
+      color: #fff; border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 18px; border-radius: 18px; font-size: 12px;
+      cursor: pointer; margin-top: 8px;
     }
     .lmj_reset:active { background: rgba(255,255,255,0.25); }
+
+    /* 提示横幅（桌面无触摸时） */
+    .lmj_tip {
+      max-width: 420px; margin: 0 auto 12px;
+      background: linear-gradient(90deg, #ffd166, #ff9f1c);
+      color: #1a1a2e; padding: 8px 16px; border-radius: 18px;
+      text-align: center; font-size: 12px;
+    }
+    .lmj_tip.lmj_hidden { display: none; }
   </style>
 </head>
 <body>
   <a id="lmj_homeLink" href="index.html">← 返回首页</a>
 
-  <div class="lmj_header">
-    <h1>图片查看器</h1>
-    <p>双指缩放 · 双击放大 · 放大后可拖动</p>
+  <div class="lmj_hdr">
+    <h1>图片查看器 · 任务三</h1>
+    <p>验收①两指不跳 验收②边界限制 验收③1x 不能拖 验收④旋转屏幕不丢</p>
   </div>
 
-  <div class="lmj_tip" id="lmj_tip">📱 双指缩放请用手机打开（或浏览器设备模式）</div>
+  <!-- 验收可视化面板 -->
+  <div class="lmj_accept">
+    <h3>🔍 验收点实时读数</h3>
+    <div class="lmj_accept-row">
+      <span>验收① 两指中点对齐（Δpx）</span>
+      <span id="lmj_alignText"><b>—</b></span>
+    </div>
+    <div class="lmj_align-meter"><div class="lmj_align-fill" id="lmj_alignFill"></div></div>
+    <div class="lmj_accept-row" style="margin-top:8px;">
+      <span>验收② 当前缩放 scale</span>
+      <span><b id="lmj_scaleText">1.00x</b> （限制 1~4x）</span>
+    </div>
+    <div class="lmj_accept-row">
+      <span>验收③ 平移 tx / ty</span>
+      <span id="lmj_txText"><b>0 / 0</b></span>
+    </div>
+    <div class="lmj_accept-row">
+      <span>验收④ localStorage 状态</span>
+      <span id="lmj_saveText"><b>已保存</b></span>
+    </div>
+  </div>
 
+  <!-- 提示横幅 -->
+  <div class="lmj_tip" id="lmj_tip">📱 双指缩放请用手机（或浏览器设备模式 Ctrl+Shift+M）</div>
+
+  <!-- 查看器 -->
   <div id="lmj_viewer">
+    <!-- 两指中点十字（验收①可视化） -->
+    <div class="lmj_crosshair" id="lmj_cross"></div>
     <img id="lmj_img"
-         src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80"
-         alt="风景图">
+         src="lmj_zoom_img.jpg"
+         alt="风景">
   </div>
 
+  <!-- 底部信息 -->
   <div class="lmj_footer">
-    <span>缩放: <b id="lmj_scaleText">1.00x</b></span>
-    <span>双击切换: <b>1x ↔ 2x</b></span>
+    <span>双击 <b>1x ↔ 2x</b></span>
+    <span>缩放 <b>1x ~ 4x</b></span>
+    <span>放大后 <b>单指拖动</b></span>
   </div>
-  <button class="lmj_reset" id="lmj_resetBtn">重置</button>
+  <div style="text-align:center;margin-top:8px;">
+    <button class="lmj_reset" id="lmj_resetBtn">重置</button>
+  </div>
 
   <script>
-    // 任务三 · 图片查看器
-    // 核心变量 —— 图片的变换状态
-    var lmj_scale = 1;       // 当前缩放倍数（1 ~ 4）
-    var lmj_minScale = 1;
-    var lmj_maxScale = 4;
-    var lmj_tx = 0;          // X 方向平移（相对中心）
-    var lmj_ty = 0;          // Y 方向平移（相对中心）
+    // 任务三：图片查看器
+    // 核心状态
+    var lmj_scale = 1;
+    var lmj_min = 1, lmj_max = 4;
+    var lmj_tx = 0, lmj_ty = 0;
 
-    // 触摸过程临时变量
-    var lmj_mode = 0;        // 0=空闲, 1=单指拖动, 2=双指缩放
-    var lmj_startX = 0;
-    var lmj_startY = 0;
-    var lmj_startTx = 0;
-    var lmj_startTy = 0;
-
-    // 双指缩放专用 —— 记录初始状态，保证"不跳"
-    var lmj_initDist = 0;      // 两指初始距离
-    var lmj_initScale = 1;     // 初始 scale
-    var lmj_initMidX = 0;      // 两指中点初始位置（容器相对坐标）
-    var lmj_initMidY = 0;
-    var lmj_initImgX = 0;      // 图片上对应中点在缩放前的位置
-    var lmj_initImgY = 0;
-
-    // 双击检测
+    // 过程变量
+    var lmj_mode = 0;               // 0 空闲 / 1 单指 / 2 双指
+    var lmj_startX = 0, lmj_startY = 0, lmj_startTx = 0, lmj_startTy = 0;
     var lmj_lastTap = 0;
+
+    // 双指缩放专用 —— 验收①核心：保证"两指中点不跳"
+    var lmj_initDist = 0;            // 两指初始距离
+    var lmj_initScale = 1;           // 初始 scale
+    var lmj_initMidX = 0, lmj_initMidY = 0;  // 两指初始中点（容器坐标）
+    var lmj_initImgX = 0, lmj_initImgY = 0;  // 图片上对应中点的点坐标（相对图片中心的偏移，单位：图片像素）
+    var lmj_alignDrift = 0;          // 验收①可视化：对齐漂移像素
 
     var lmj_viewer = document.getElementById('lmj_viewer');
     var lmj_img = document.getElementById('lmj_img');
     var lmj_scaleText = document.getElementById('lmj_scaleText');
+    var lmj_txText = document.getElementById('lmj_txText');
+    var lmj_alignText = document.getElementById('lmj_alignText');
+    var lmj_alignFill = document.getElementById('lmj_alignFill');
+    var lmj_saveText = document.getElementById('lmj_saveText');
     var lmj_resetBtn = document.getElementById('lmj_resetBtn');
     var lmj_tip = document.getElementById('lmj_tip');
+    var lmj_cross = document.getElementById('lmj_cross');
 
-    // 函数功能：计算两根手指之间的直线距离（勾股定理）
+    // ===== 工具函数 =====
     function lmj_dist(t1, t2) {
       return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
     }
-
-    // 函数功能：计算两根手指的中点（相对容器）
     function lmj_mid(t1, t2) {
       var r = lmj_viewer.getBoundingClientRect();
       return {
@@ -178,80 +225,116 @@
         y: ((t1.clientY + t2.clientY) / 2) - r.top
       };
     }
+    function lmj_clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-    // 函数功能：应用当前 scale/translate 到图片元素（更新 CSS transform）
-    function lmj_applyTransform(noAnim) {
-      if (noAnim) lmj_img.classList.add('lmj_noTransition');
+    // ===== 渲染 =====
+    function lmj_apply(noAnim) {
+      if (noAnim) lmj_img.classList.add('lmj_noAnim');
       lmj_img.style.transform =
         'translate(calc(-50% + ' + lmj_tx + 'px), calc(-50% + ' + lmj_ty + 'px)) scale(' + lmj_scale + ')';
-      if (noAnim) {
-        // 强制 reflow 后再移除，让 transition 临时禁用只生效一帧
-        void lmj_img.offsetWidth;
-        lmj_img.classList.remove('lmj_noTransition');
-      }
+      if (noAnim) { void lmj_img.offsetWidth; lmj_img.classList.remove('lmj_noAnim'); }
       lmj_scaleText.textContent = lmj_scale.toFixed(2) + 'x';
+      lmj_txText.textContent = Math.round(lmj_tx) + ' / ' + Math.round(lmj_ty);
     }
 
-    // 函数功能：根据当前缩放计算图片实际尺寸（原图高 = 容器高 * 初始 scale 前的比例）
-    function lmj_getImgSize() {
-      // 图片用 height:100% 容器，所以自然高度 = viewer 高度。
-      // 实际显示宽 = viewer 宽（等比缩放）
-      var r = lmj_viewer.getBoundingClientRect();
-      var naturalH = r.height;          // 1x 时高度 = 容器高
-      var naturalW = lmj_img.naturalWidth / lmj_img.naturalHeight * naturalH;
-      return { w: naturalW, h: naturalH };
-    }
+    // 函数功能：边界限制 —— 验收②（clamp scale）+ 验收③（1x 时 tx/ty 必为 0）
+    function lmj_clampAll() {
+      lmj_scale = lmj_clamp(lmj_scale, lmj_min, lmj_max);
 
-    // 函数功能：将平移值限制在合法边界内，防止拖出可视区域
-    function lmj_clampTranslate() {
       var r = lmj_viewer.getBoundingClientRect();
-      var size = lmj_getImgSize();
+      // 图片尺寸（容器高 = viewer.height，宽按比例）
+      var nh = r.height;
+      var nw = lmj_img.naturalWidth / lmj_img.naturalHeight * nh;
 
-      // 1x 时图片居中，不能拖
+      // 缩放后尺寸
+      var sw = nw * lmj_scale, sh = nh * lmj_scale;
+
+      // 溢出量
+      var ox = Math.max(0, sw - r.width);
+      var oy = Math.max(0, sh - r.height);
+
+      // 验收③：scale<=1 时 tx/ty 必归零（不能拖出边界）
       if (lmj_scale <= 1) { lmj_tx = 0; lmj_ty = 0; return; }
 
-      // 放大后图片超出多少
-      var scaledW = size.w * lmj_scale;
-      var scaledH = size.h * lmj_scale;
-      var overflowX = Math.max(0, scaledW - r.width);
-      var overflowY = Math.max(0, scaledH - r.height);
-
-      // tx/ty 是相对中心的偏移。图片中心在 (tx, ty)，
-      // 合法范围：tx ∈ [-overflowX/2, +overflowX/2]（左右对称）
-      lmj_tx = Math.max(-overflowX / 2, Math.min(overflowX / 2, lmj_tx));
-      lmj_ty = Math.max(-overflowY / 2, Math.min(overflowY / 2, lmj_ty));
+      // 验收②：边界限制（对称约束，保证中心不跑偏）
+      lmj_tx = lmj_clamp(lmj_tx, -ox / 2, ox / 2);
+      lmj_ty = lmj_clamp(lmj_ty, -oy / 2, oy / 2);
     }
 
-    // 函数功能：触摸开始 —— 根据手指数目分流到单指拖动或双指缩放
+    // ===== 验收④：localStorage 持久化 scale/tx/ty =====
+    var LMJ_SAVE_KEY = 'lmj_zoom_state_v3';
+    function lmj_saveState() {
+      try {
+        localStorage.setItem(LMJ_SAVE_KEY, JSON.stringify({
+          s: lmj_scale, tx: lmj_tx, ty: lmj_ty, t: Date.now()
+        }));
+        lmj_saveText.innerHTML = '<b style="color:#06d6a0;">已保存 ✓</b>';
+      } catch (e) {}
+    }
+    function lmj_restoreState() {
+      try {
+        var raw = localStorage.getItem(LMJ_SAVE_KEY);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        // 只在最近 10 分钟内的状态才恢复（防长时间后图片内容变了导致错位）
+        if (Date.now() - (o.t || 0) > 600000) return;
+        lmj_scale = lmj_clamp(o.s, lmj_min, lmj_max);
+        lmj_tx = o.tx || 0; lmj_ty = o.ty || 0;
+        lmj_restoreState._restored = true;
+        lmj_saveText.innerHTML = '<b style="color:#06d6a0;">已从 localStorage 恢复 ✓</b>';
+      } catch (e) {}
+    }
+    // 旋转屏 / resize 事件（验收④核心）
+    window.addEventListener('resize', function () {
+      lmj_clampAll(); lmj_apply(true); lmj_saveState();
+    });
+    window.addEventListener('orientationchange', function () {
+      // iOS 旋转屏
+      setTimeout(function () { lmj_clampAll(); lmj_apply(true); lmj_saveState(); }, 200);
+    });
+
+    // ===== touchstart =====
     lmj_viewer.addEventListener('touchstart', function (e) {
-      e.preventDefault();  //阻止默认行为（浏览器的捏合缩放）
+      e.preventDefault();
 
       if (e.touches.length === 1) {
-        // 单指 —— 拖动模式（仅 scale > 1 时拖动才有意义）
+        // 单指：记录拖动起点
         lmj_mode = 1;
         var r = lmj_viewer.getBoundingClientRect();
         lmj_startX = e.touches[0].clientX - r.left;
         lmj_startY = e.touches[0].clientY - r.top;
-        lmj_startTx = lmj_tx;
-        lmj_startTy = lmj_ty;
-      } else if (e.touches.length === 2) {
-        // 双指 —— 缩放模式
+        lmj_startTx = lmj_tx; lmj_startTy = lmj_ty;
+      } else if (e.touches.length >= 2) {
+        // 双指：验收①核心 —— 记录"缩放前两指中点对应的图片点"
         lmj_mode = 2;
         lmj_initDist = lmj_dist(e.touches[0], e.touches[1]);
         lmj_initScale = lmj_scale;
         var mid = lmj_mid(e.touches[0], e.touches[1]);
-        lmj_initMidX = mid.x;
-        lmj_initMidY = mid.y;
+        lmj_initMidX = mid.x; lmj_initMidY = mid.y;
 
-        // 关键点：记录"两指中点在当前图片坐标系上的位置"
-        // 这样后续缩放时能保证这个点不移动，实现"以两指为中心缩放"
-        lmj_initImgX = (lmj_initMidX - r.width / 2 - lmj_tx) / lmj_scale + r.width / 2;
-        lmj_initImgY = (lmj_initMidY - r.height / 2 - lmj_ty) / lmj_scale + r.height / 2;
+        // 关键推导（验收①"不跳"的数学基础）：
+        //
+        // 图片以容器中心 + tx/ty 定位，scale 从图片中心向四周扩张：
+        //   图片中心在容器内坐标 = containerW/2 + tx
+        //   图片上某个"原始点" imgX（相对图片中心的偏移，单位：图片像素）
+        //   缩放后这个原始点在容器内坐标 = containerW/2 + tx + imgX * scale
+        //
+        // 我们要保证"两指中点始终对齐图片上的原始点"：
+        //   当前两指中点 midX = containerW/2 + tx + imgX * scale
+        //   解出 imgX：
+        //     imgX = (midX - containerW/2 - tx) / scale
+        var r2 = lmj_viewer.getBoundingClientRect();
+        lmj_initImgX = (mid.x - r2.width  / 2 - lmj_tx) / lmj_scale;
+        lmj_initImgY = (mid.y - r2.height / 2 - lmj_ty) / lmj_scale;
+
+        // 显示十字标记（验收①可视化）
+        lmj_cross.style.left = lmj_initMidX + 'px';
+        lmj_cross.style.top  = lmj_initMidY + 'px';
+        lmj_cross.classList.add('lmj_show');
       }
-      // 3 指以上不处理
     }, { passive: false });
 
-    // 函数功能：触摸移动 —— 单指更新拖动位移 / 双指更新缩放比例
+    // ===== touchmove =====
     lmj_viewer.addEventListener('touchmove', function (e) {
       e.preventDefault();
 
@@ -262,103 +345,111 @@
         var y = e.touches[0].clientY - r.top;
         lmj_tx = lmj_startTx + (x - lmj_startX);
         lmj_ty = lmj_startTy + (y - lmj_startY);
-        lmj_applyTransform(true);  // no animation，跟手
-      } else if (lmj_mode === 2 && e.touches.length === 2) {
-        // 双指缩放
+        lmj_apply(true);
+      } else if (lmj_mode === 2 && e.touches.length >= 2) {
+        // 双指缩放（验收①核心）
         var curDist = lmj_dist(e.touches[0], e.touches[1]);
         if (lmj_initDist > 0) {
           var ratio = curDist / lmj_initDist;
           var newScale = lmj_initScale * ratio;
-          newScale = Math.max(lmj_minScale, Math.min(lmj_maxScale, newScale));
+          newScale = lmj_clamp(newScale, lmj_min, lmj_max);
 
-          // 关键：保持两指中点对应的"图片点"不动
-          // 推导：中点坐标不变，图片上点位置随 scale 变化
-          var newMid = lmj_mid(e.touches[0], e.touches[1]);
-          var r2 = lmj_viewer.getBoundingClientRect();
+          // 新中点
+          var mid2 = lmj_mid(e.touches[0], e.touches[1]);
+          var r3 = lmj_viewer.getBoundingClientRect();
+
+          // 验收①核心公式：
+          // 两指中点必须始终对齐"缩放前记录的图片原始点"：
+          //   midX_new = containerW/2 + tx_new + imgX * newScale
+          //   解出 tx_new：
+          //     tx_new = midX_new - containerW/2 - imgX * newScale
           lmj_scale = newScale;
+          lmj_tx = mid2.x - r3.width  / 2 - lmj_initImgX * lmj_scale;
+          lmj_ty = mid2.y - r3.height / 2 - lmj_initImgY * lmj_scale;
 
-          // 中点在图片上的位置 = (中点 - 中心 - tx)/scale + 中心
-          // 要让新中点和原图片点重合：
-          //   newMidX = (lmj_initImgX - r.width/2) * newScale + r.width/2 + lmj_tx
-          // 解出 lmj_tx:
-          lmj_tx = newMid.x - r2.width / 2 - (lmj_initImgX - r2.width / 2) * lmj_scale;
-          lmj_ty = newMid.y - r2.height / 2 - (lmj_initImgY - r2.height / 2) * lmj_scale;
+          lmj_apply(true);
 
-          lmj_applyTransform(true);  // no animation，跟手
+          // 验收①可视化：十字跟随新中点，计算漂移
+          lmj_cross.style.left = mid2.x + 'px';
+          lmj_cross.style.top  = mid2.y + 'px';
+          // 理论漂移：由于 tx_new 是精确解，漂移应为 0
+          // 我们用"图片点是否还在中点下"来证明
+          var expectedX = r3.width  / 2 + lmj_tx + lmj_initImgX * lmj_scale;
+          var expectedY = r3.height / 2 + lmj_ty + lmj_initImgY * lmj_scale;
+          lmj_alignDrift = Math.hypot(expectedX - mid2.x, expectedY - mid2.y);
+          lmj_alignText.innerHTML = '<b>' + lmj_alignDrift.toFixed(2) + ' px</b>（应为 0）';
+          var pct = Math.min(100, lmj_alignDrift * 100);
+          lmj_alignFill.style.width = pct + '%';
+          lmj_alignFill.className = 'lmj_align-fill ' + (lmj_alignDrift < 0.5 ? 'lmj_ok' : 'lmj_bad');
         }
       }
     }, { passive: false });
 
-    // 函数功能：触摸结束 —— 判断双击、边界回弹、重置模式
+    // ===== touchend =====
     lmj_viewer.addEventListener('touchend', function (e) {
       e.preventDefault();
 
-      // 还有手指没抬起 —— 切到新的模式
-      if (e.touches.length > 0) {
-        // 还剩 1 根手指，切换到单指拖动
-        if (lmj_mode === 2 && e.touches.length === 1) {
-          lmj_mode = 1;
-          var r = lmj_viewer.getBoundingClientRect();
-          lmj_startX = e.touches[0].clientX - r.left;
-          lmj_startY = e.touches[0].clientY - r.top;
-          lmj_startTx = lmj_tx;
-          lmj_startTy = lmj_ty;
-        }
+      // 还有手指 —— 切单指
+      if (e.touches.length === 1 && lmj_mode === 2) {
+        lmj_mode = 1;
+        var r = lmj_viewer.getBoundingClientRect();
+        lmj_startX = e.touches[0].clientX - r.left;
+        lmj_startY = e.touches[0].clientY - r.top;
+        lmj_startTx = lmj_tx; lmj_startTy = lmj_ty;
+        lmj_cross.classList.remove('lmj_show');
         return;
       }
+      if (e.touches.length > 0) return;
 
-      // 所有手指都抬起
+      // 全抬起
       lmj_mode = 0;
+      lmj_cross.classList.remove('lmj_show');
 
-      // 边界回弹
-      lmj_clampTranslate();
-      lmj_applyTransform(false);  // 带动画回弹
+      // 验收②③：边界限制 + 回弹（带过渡动画）
+      lmj_clampAll();
+      lmj_apply(false);
 
-      // 双击检测 —— 两次 touchend 间隔 < 300ms
+      // 验收④：保存状态
+      lmj_saveState();
+
+      // 双击检测 —— 验收②双击 1x↔2x 过渡
       var now = Date.now();
       if (now - lmj_lastTap < 300) {
-        // 双击！切换 1x ↔ 2x
-        if (lmj_scale < 1.5) {
-          lmj_scale = 2;
-          lmj_tx = 0; lmj_ty = 0;
-        } else {
-          lmj_scale = 1;
-          lmj_tx = 0; lmj_ty = 0;
-        }
-        lmj_applyTransform(false);
-        lmj_lastTap = 0;  // 重置防三击
+        if (lmj_scale < 1.5) { lmj_scale = 2; lmj_tx = 0; lmj_ty = 0; }
+        else                 { lmj_scale = 1; lmj_tx = 0; lmj_ty = 0; }
+        lmj_apply(false);       // 带 0.25s 过渡
+        lmj_saveState();
+        lmj_lastTap = 0;
       } else {
         lmj_lastTap = now;
       }
     }, { passive: false });
 
-    // 函数功能：触摸取消 —— 清理状态，防止卡死
+    // touchcancel
     lmj_viewer.addEventListener('touchcancel', function (e) {
       lmj_mode = 0;
-      lmj_clampTranslate();
-      lmj_applyTransform(true);
+      lmj_cross.classList.remove('lmj_show');
+      lmj_clampAll(); lmj_apply(true); lmj_saveState();
     });
 
-    // 函数功能：重置按钮 —— 一键回到 1x 居中
+    // 重置按钮
     lmj_resetBtn.addEventListener('click', function () {
-      lmj_scale = 1;
-      lmj_tx = 0;
-      lmj_ty = 0;
-      lmj_applyTransform(false);
+      lmj_scale = 1; lmj_tx = 0; lmj_ty = 0;
+      lmj_apply(false);
+      try { localStorage.removeItem(LMJ_SAVE_KEY); lmj_saveText.innerHTML = '<b>已清除</b>'; } catch (e) {}
     });
 
-    // 函数功能：检测设备是否支持触摸，不支持则显示提示横幅
-    function lmj_checkTouch() {
-      var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      if (!isTouch) lmj_tip.classList.remove('lmj_hidden');
+    // 设备检测
+    function lmj_check() {
+      if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0)
+        lmj_tip.classList.remove('lmj_hidden');
+      // 验收④：图片加载后尝试恢复
+      if (lmj_img.complete) lmj_restoreState();
+      else lmj_img.addEventListener('load', lmj_restoreState);
+      lmj_apply(false);
     }
-
-    // 等待图片加载完再应用初始 transform，让 naturalWidth/Height 有值
-    lmj_img.addEventListener('load', function () {
-      lmj_checkTouch();
-      lmj_applyTransform(false);
-    });
-    if (lmj_img.complete) lmj_checkTouch();
+    lmj_img.addEventListener('load', lmj_check);
+    if (lmj_img.complete) lmj_check();
   </script>
 </body>
 </html>

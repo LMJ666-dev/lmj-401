@@ -1,0 +1,907 @@
+<!--
+  作者：梁铭巨
+  学号：24002120401
+  建立时间：2026-11-19
+  使用大模型：Trae AI Assistant
+  功能名称：移动端触摸交互四合一 —— 事件探针 / 手势卡片 / 图片查看器 / 摇一摇 + 倾斜视差
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>移动端触摸交互 · 四合一</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0e1320;
+      color: #e8ecf4;
+      min-height: 100vh;
+      padding: 22px 16px 48px;
+    }
+    #lmj_homeLink {
+      display: inline-block; padding: 5px 12px;
+      background: rgba(255,255,255,0.08); color: #9ea8bf;
+      text-decoration: none; border-radius: 16px; font-size: 11px;
+      border: 1px solid rgba(255,255,255,0.12); margin-bottom: 14px;
+    }
+
+    /* ===== 页头 ===== */
+    .lmj_top { text-align: center; margin-bottom: 18px; }
+    .lmj_top h1 {
+      font-size: 22px; letter-spacing: 4px; margin: 0 0 6px;
+      background: linear-gradient(135deg, #7ee8fa, #80ffdb, #ffd166);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .lmj_top p { font-size: 12px; color: #5a6478; letter-spacing: 1px; margin: 0; }
+
+    /* ===== Tab 切换 ===== */
+    .lmj_tabs {
+      display: flex; gap: 8px; overflow-x: auto;
+      padding-bottom: 4px; margin-bottom: 18px;
+      scrollbar-width: none;
+    }
+    .lmj_tabs::-webkit-scrollbar { display: none; }
+    .lmj_tab {
+      flex: 0 0 auto; padding: 8px 16px; font-size: 13px;
+      color: #8892a6; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px; cursor: pointer; font-family: inherit;
+      transition: all .2s; white-space: nowrap;
+    }
+    .lmj_tab.lmj_on {
+      color: #0e1320; font-weight: 700;
+      background: linear-gradient(135deg, #7ee8fa, #80ffdb);
+      border-color: transparent;
+    }
+
+    .lmj_panel { display: none; }
+    .lmj_panel.lmj_show { display: block; animation: lmj_fade .28s ease; }
+    @keyframes lmj_fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== 公共 ===== */
+    .lmj_sub { font-size: 14px; color: #a8b2c6; letter-spacing: 1px; margin: 22px 0 10px; }
+    .lmj_foot { font-size: 12.5px; line-height: 1.9; color: #78829a; margin-top: 16px; }
+    .lmj_foot b { color: #e8ecf4; font-weight: 600; }
+    .lmj_foot code { background: rgba(126,232,250,.15); color: #7ee8fa; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    .lmj_note { font-size: 13px; line-height: 1.9; color: #9ea8bf; margin: 0 0 14px; }
+    .lmj_btn {
+      padding: 10px 24px; font-family: inherit; font-size: 13px;
+      color: #0e1320; background: linear-gradient(135deg, #7ee8fa, #80ffdb);
+      border: none; border-radius: 999px; cursor: pointer; letter-spacing: 1px;
+      font-weight: 600;
+    }
+    .lmj_btn.lmj_ghost {
+      color: #7ee8fa; background: transparent;
+      border: 1px solid rgba(126,232,250,.4);
+    }
+
+    /* ══════════ 任务一：事件探针 ══════════ */
+    .lmj_probe {
+      width: 100%; max-width: 420px; height: 260px;
+      margin: 0 auto; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(126,232,250,.08), rgba(128,255,219,.06));
+      border: 1px dashed rgba(126,232,250,.25);
+      display: flex; align-items: center; justify-content: center;
+      touch-action: none; user-select: none;
+      font-size: 14px; color: #7ee8fa; letter-spacing: 2px;
+      transition: background .2s;
+    }
+    .lmj_probe.lmj_active { background: rgba(126,232,250,.18); border-style: solid; }
+    .lmj_log {
+      max-width: 420px; margin: 14px auto 0;
+      background: rgba(0,0,0,.3); border-radius: 10px;
+      font-size: 12px; font-family: Consolas, monospace;
+      max-height: 200px; overflow-y: auto;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .lmj_log-item { padding: 4px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .lmj_log-item:last-child { border-bottom: none; }
+    .lmj_log-item span:first-child { color: #5a6478; margin-right: 6px; }
+    .lmj_log-item code { color: #ffd166; }
+    .lmj_qa { margin: 16px 0 0; padding: 0; list-style: none; }
+    .lmj_qa li {
+      background: rgba(255,255,255,.035);
+      border-left: 3px solid #7ee8fa; border-radius: 8px;
+      padding: 12px 14px; margin-bottom: 10px;
+      font-size: 12.5px; line-height: 1.9; color: #9ea8bf;
+    }
+    .lmj_qa li strong { display: block; color: #e8ecf4; margin-bottom: 4px; font-size: 13px; }
+
+    /* ══════════ 任务二：手势卡片 ══════════ */
+    .lmj_g-stage {
+      position: relative; overflow: hidden; border-radius: 20px;
+      touch-action: pan-y; user-select: none; -webkit-user-select: none;
+      height: 340px;
+    }
+    .lmj_g-track {
+      display: flex; width: 100%; height: 100%;
+      transition: transform .35s cubic-bezier(.2,.8,.2,1); will-change: transform;
+    }
+    .lmj_g-card {
+      flex: 0 0 100%; min-width: 100%;
+      padding: 28px 24px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      position: relative; overflow: hidden;
+    }
+    .lmj_g-card img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 0;
+    }
+    .lmj_g-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.4) 40%, rgba(0,0,0,0) 80%);
+      z-index: 1;
+    }
+    .lmj_g-card > * { position: relative; z-index: 2; }
+    .lmj_g-emoji {
+      position: absolute; top: 14px; right: 16px;
+      font-size: 64px; opacity: .25; z-index: 2;
+    }
+    .lmj_g-tag {
+      align-self: flex-start; font-size: 11px; letter-spacing: 2px;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(0,0,0,.4); margin-bottom: 10px; color: #fff;
+    }
+    .lmj_g-name { font-size: 27px; font-weight: 800; letter-spacing: 2px; margin: 0 0 8px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+    .lmj_g-desc { font-size: 13px; line-height: 1.9; margin: 0; color: rgba(255,255,255,.92); text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+    .lmj_g-bar {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-top: 14px; font-size: 13px; color: #78829a;
+    }
+    .lmj_g-bar b { color: #7ee8fa; font-size: 15px; }
+    .lmj_g-dots { display: flex; gap: 7px; }
+    .lmj_g-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.2); transition: all .25s; }
+    .lmj_g-dot.lmj_on { background: #7ee8fa; transform: scale(1.5); }
+    .lmj_g-nav { display: flex; justify-content: center; gap: 14px; margin-top: 12px; }
+    .lmj_g-nav button {
+      width: 40px; height: 40px; border-radius: 50%;
+      font-size: 18px; line-height: 1; font-family: inherit;
+      color: #7ee8fa; background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.12); cursor: pointer;
+    }
+    .lmj_g-toast {
+      position: fixed; left: 50%; bottom: 80px;
+      transform: translate(-50%, 12px);
+      background: rgba(0,0,0,.85); color: #fff;
+      font-size: 13px; padding: 9px 18px; border-radius: 999px;
+      opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+      z-index: 50;
+    }
+    .lmj_g-toast.lmj_show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* ══════════ 任务三：图片查看器 ══════════ */
+    .lmj_z-viewer {
+      position: relative; overflow: hidden;
+      width: 100%; height: min(52vh, 400px);
+      background: #05070a; border-radius: 14px;
+      touch-action: none; user-select: none; -webkit-touch-callout: none;
+      cursor: grab;
+    }
+    .lmj_z-viewer.lmj_grabbing { cursor: grabbing; }
+    .lmj_z-img {
+      position: absolute; top: 0; left: 0; width: 100%;
+      display: block; transform-origin: 0 0; will-change: transform;
+      pointer-events: none;
+    }
+    .lmj_z-img.lmj_anim { transition: transform .25s ease; }
+    .lmj_z-badge {
+      position: absolute; right: 10px; top: 10px;
+      background: rgba(0,0,0,.5); border-radius: 999px;
+      padding: 4px 10px; font-size: 11px; color: #d7cfc0; pointer-events: none;
+    }
+    .lmj_z-tools { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
+    .lmj_z-tools button {
+      min-width: 44px; height: 36px; padding: 0 12px; font-family: inherit; font-size: 14px;
+      color: #d7cfc0; background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 8px; cursor: pointer;
+    }
+
+    /* ══════════ 任务四：倾斜视差 ══════════ */
+    .lmj_t-scene {
+      position: relative; width: 100%; height: min(58vh, 440px);
+      overflow: hidden; border-radius: 18px;
+      background: radial-gradient(ellipse at 50% 42%, #1a1d3e, #070916 72%);
+      touch-action: pan-y;
+    }
+    .lmj_t-layer {
+      position: absolute; will-change: transform;
+      transition: transform .2s cubic-bezier(.2,.8,.2,1);
+      pointer-events: none;
+    }
+    .lmj_s-bg { left: -10%; top: -10%; width: 120%; height: 120%; object-fit: cover; opacity: .35; filter: blur(3px); }
+    .lmj_s-glow {
+      left: 50%; top: 20%; width: 140px; height: 140px; margin: -70px 0 0 -70px;
+      background: radial-gradient(circle, rgba(126,232,250,.55), rgba(126,232,250,0) 70%);
+      border-radius: 50%;
+    }
+    .lmj_s-phone {
+      left: 0; right: 0; top: 0; bottom: 0; margin: auto;
+      width: 180px; height: 320px;
+      background: linear-gradient(160deg, #2a3050, #141728);
+      border-radius: 26px; border: 2px solid rgba(255,255,255,.12);
+      box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 0 20px rgba(255,255,255,.04);
+      display: flex; flex-direction: column; padding: 10px;
+    }
+    .lmj_s-notch { width: 60px; height: 4px; background: rgba(0,0,0,.5); border-radius: 2px; margin: 0 auto 8px; }
+    .lmj_s-screen {
+      flex: 1; border-radius: 18px;
+      background: linear-gradient(160deg, #1a1d3e, #2c1a3e);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .lmj_s-screen.lmj_pop { animation: lmj_pop .4s cubic-bezier(.2,1.5,.4,1); }
+    @keyframes lmj_pop {
+      0% { transform: scale(.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .lmj_s-emoji { font-size: 56px; line-height: 1; }
+    .lmj_s-dish { color: #7ee8fa; font-size: 15px; margin-top: 8px; font-weight: 600; letter-spacing: 2px; }
+    .lmj_t-badge {
+      position: absolute; right: 12px; top: 12px;
+      background: rgba(0,0,0,.55); border-radius: 999px;
+      padding: 5px 11px; font-size: 11px; color: #7ee8fa; pointer-events: none;
+      font-family: Consolas, monospace;
+    }
+    .lmj_s-status { font-size: 12px; color: #78829a; margin-top: 14px; text-align: center; }
+    .lmj_s-status.lmj_warn { color: #ffd166; }
+    .lmj_s-meta { font-size: 12px; color: #78829a; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+  <a id="lmj_homeLink" href="index.html">← 返回首页</a>
+
+  <div class="lmj_top">
+    <h1>移 动 端 触 摸 交 互</h1>
+    <p>四关合辑 · 事件记录 / 手势卡片 / 图片查看器 / 摇一摇 + 倾斜视差</p>
+  </div>
+
+  <!-- ===== Tab ===== -->
+  <nav class="lmj_tabs">
+    <button class="lmj_tab lmj_on" data-panel="lmj_p1">任务一 · 事件侦探</button>
+    <button class="lmj_tab" data-panel="lmj_p2">任务二 · 手势卡片</button>
+    <button class="lmj_tab" data-panel="lmj_p3">任务三 · 图片查看器</button>
+    <button class="lmj_tab" data-panel="lmj_p4">任务四 · 摇一摇</button>
+  </nav>
+
+  <!-- ══════════ 任务一 ══════════ -->
+  <section class="lmj_panel lmj_show" id="lmj_p1">
+    <p class="lmj_note">
+      在下方探针区依次做 5 种操作，看事件触发顺序。<br>
+      <b>触屏请用手机或浏览器设备模式（Ctrl+Shift+M）</b>。
+    </p>
+    <div class="lmj_probe" id="lmj_probe">👇 在我身上做操作 👇</div>
+    <div class="lmj_log" id="lmj_log"></div>
+
+    <ul class="lmj_qa">
+      <li>
+        <strong>① 一次拖动的 touchmove 大约多少次？和距离什么关系？</strong>
+        屏幕每帧报一次（60Hz ≈ 每 16ms 一次），拖 1 秒约 50~60 次。<br>
+        距离越大、速度越慢 → move 次数越多——每次 move 都重绘位置，这就是"跟手"。
+      </li>
+      <li>
+        <strong>② click 出现在 touchend 之前还是之后？</strong>
+        <b>之后。</b> click 是系统判定"这是一次点击"后补发的，历史上有 300ms 延迟（在等双击），
+        所以移动端常加 <code>touch-action: manipulation</code> 关掉 300ms 等待。
+      </li>
+      <li>
+        <strong>③ 把 touchend 换成 touchcancel 会发生什么？</strong>
+        <code>touchcancel</code> 只在被系统打断（来电、消息横幅、手势返回）时触发，<br>
+        手指正常抬起时不会触发 → 清理逻辑永远跑不到 → 冷却标记卡死、拖动状态不复位 → 页面"卡住"。
+      </li>
+    </ul>
+
+    <p class="lmj_note" style="margin-top: 14px;">
+      <b>本次踩到的一个坑：</b><br>
+      手势卡片的冷却标记只在 <code>touchend</code> 里置位，被系统通知横幅打断后永远停在冷却中，卡片再也不响应。<br>
+      <b>解决：</b>在 <code>touchcancel</code> 里同样重置冷却与拖动状态。
+    </p>
+  </section>
+
+  <!-- ══════════ 任务二 ══════════ -->
+  <section class="lmj_panel" id="lmj_p2">
+    <div class="lmj_g-stage" id="lmj_g_stage">
+      <div class="lmj_g-track" id="lmj_g_track">
+        <!-- JS 生成卡片 -->
+      </div>
+    </div>
+
+    <div class="lmj_g-bar">
+      <span>第 <b id="lmj_g_num">1</b> / 4 张</span>
+      <div class="lmj_g-dots" id="lmj_g_dots"></div>
+    </div>
+    <div class="lmj_g-nav">
+      <button id="lmj_g_prev">‹</button>
+      <button id="lmj_g_next">›</button>
+    </div>
+    <p class="lmj_note" style="text-align:center;margin-top:10px;font-size:11px;color:#5a6478;">
+      左滑下一道 · 右滑上一道　阈值 40px · 冷却 300ms · touch-action:pan-y
+    </p>
+  </section>
+
+  <!-- ══════════ 任务三 ══════════ -->
+  <section class="lmj_panel" id="lmj_p3">
+    <div class="lmj_z-viewer" id="lmj_z_viewer">
+      <img class="lmj_z-img" id="lmj_z_img" src="lmj_zoom_img.jpg" alt="风景">
+      <div class="lmj_z-badge" id="lmj_z_badge">× 1.00</div>
+    </div>
+
+    <div class="lmj_z-tools">
+      <button id="lmj_z_out">－</button>
+      <button id="lmj_z_reset">1x</button>
+      <button id="lmj_z_in">＋</button>
+    </div>
+    <div class="lmj_foot">
+      <p>
+        <b>手机</b>：双指缩放 1x~4x、双击 1x/2x、放大后单指拖动。<br>
+        <b>电脑</b>：滚轮缩放、按住拖动、双击切换 1x/2x。缩回 1x 自动居中。<br>
+        <b>不跳原理</b>：记录"缩放前两指中点在图片上的原始位置 imgX"，每帧反推 tx 让 <code>containerMidX = containerW/2 + tx + imgX * scale</code> 始终成立。
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════ 任务四 ══════════ -->
+  <section class="lmj_panel" id="lmj_p4">
+    <div class="lmj_t-scene" id="lmj_t_scene">
+      <img class="lmj_t-layer lmj_s-bg"     data-depth="6"  src="lmj_space_bg.jpg" alt="星空背景">
+      <div class="lmj_t-layer lmj_s-glow"   data-depth="14"></div>
+      <div class="lmj_t-layer lmj_s-phone"  data-depth="30" id="lmj_s_phone">
+        <div class="lmj_s-notch"></div>
+        <div class="lmj_s-screen" id="lmj_s_screen">
+          <div class="lmj_s-emoji" id="lmj_s_emoji">🍽️</div>
+          <div class="lmj_s-dish"  id="lmj_s_dish">摇一摇试试</div>
+        </div>
+      </div>
+      <div class="lmj_t-badge" id="lmj_t_badge">γ 0.0° · β 0.0°</div>
+    </div>
+
+    <div class="lmj_s-status" id="lmj_t_status">正在等待传感器数据…</div>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="lmj_btn" id="lmj_s_draw">🎲 点我抽一次</button>
+      <button class="lmj_btn lmj_ghost" id="lmj_t_auth" style="display:none;">授权传感器</button>
+    </div>
+    <p class="lmj_s-meta" id="lmj_s_meta">摇一摇抽一道菜 · 左右倾斜看视差</p>
+
+    <div class="lmj_foot">
+      <h3 style="margin-top:12px;color:#e8ecf4;">实现思路</h3>
+      <p>
+        <b>摇一摇：</b>监听 <code>devicemotion</code>，取 <code>accelerationIncludingGravity</code> 三轴合成 √(x²+y²+z²)，超过 18 触发，1.5s 冷却。<br>
+        <b>倾斜视差：</b>监听 <code>deviceorientation</code>，用 <code>gamma</code>/<code>beta</code>，首次读数记为零点，之后按 "倾斜比例 × 该层 depth" 做 <code>translate3d</code>，手机（depth 30）动得多、背景（depth 6）动得少，形成层次。<br>
+        <b>降级：</b>收不到传感器时，抽菜用按钮、视差用鼠标位置模拟——保证任何设备都能演示。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    /* ══════════════ Tab 切换 ══════════════ */
+    var lmj_tabs = document.querySelectorAll('.lmj_tab');
+    var lmj_panels = document.querySelectorAll('.lmj_panel');
+    function lmj_showPanel(id) {
+      lmj_tabs.forEach(function (b) { b.classList.toggle('lmj_on', b.dataset.panel === id); });
+      lmj_panels.forEach(function (p) { p.classList.toggle('lmj_show', p.id === id); });
+      // 图片查看器隐藏时量不到宽度，显示后必须重测
+      if (id === 'lmj_p3') { lmj_z_measure(); lmj_z_clamp(); lmj_z_apply(false); }
+    }
+    lmj_tabs.forEach(function (b) { b.addEventListener('click', function () { lmj_showPanel(b.dataset.panel); }); });
+
+    /* ══════════════ 任务一：事件探针 ══════════════ */
+    var lmj_probe = document.getElementById('lmj_probe');
+    var lmj_log = document.getElementById('lmj_log');
+    function lmj_addLog(evt) {
+      var t = new Date();
+      var hh = String(t.getHours()).padStart(2,'0');
+      var mm = String(t.getMinutes()).padStart(2,'0');
+      var ss = String(t.getSeconds()).padStart(2,'0');
+      var len = evt.touches ? evt.touches.length : 'm';
+      var div = document.createElement('div');
+      div.className = 'lmj_log-item';
+      div.innerHTML = '<span>' + hh + ':' + mm + ':' + ss + '</span>' +
+                      '<code>' + evt.type + '</code>' +
+                      '<span style="color:#7ee8fa;margin-left:8px;">touches=' + len + '</span>';
+      lmj_log.appendChild(div);
+      lmj_log.scrollTop = lmj_log.scrollHeight;
+      if (lmj_log.children.length > 50) lmj_log.removeChild(lmj_log.firstChild);
+    }
+    lmj_probe.addEventListener('touchstart', lmj_addLog);
+    lmj_probe.addEventListener('touchmove',  lmj_addLog);
+    lmj_probe.addEventListener('touchend',  lmj_addLog);
+    lmj_probe.addEventListener('touchcancel', lmj_addLog);
+    lmj_probe.addEventListener('mousedown',  lmj_addLog);
+    lmj_probe.addEventListener('mousemove',  lmj_addLog);
+    lmj_probe.addEventListener('mouseup',    lmj_addLog);
+    lmj_probe.addEventListener('click',      lmj_addLog);
+    lmj_probe.addEventListener('dblclick',   lmj_addLog);
+    lmj_probe.addEventListener('contextmenu', function (e) { e.preventDefault(); lmj_addLog(e); });
+    lmj_probe.addEventListener('touchstart', function () { lmj_probe.classList.add('lmj_active'); }, {passive:true});
+    lmj_probe.addEventListener('touchend',   function () { lmj_probe.classList.remove('lmj_active'); });
+
+    /* ══════════════ 任务二：手势卡片 ══════════════ */
+    var lmj_g_track = document.getElementById('lmj_g_track');
+    var lmj_g_num = document.getElementById('lmj_g_num');
+    var lmj_g_dots = document.getElementById('lmj_g_dots');
+    var lmj_g_toast = document.getElementById('lmj_g_toast');
+    var lmj_g_stage = document.getElementById('lmj_g_stage');
+
+    var lmj_g_foods = [
+      { name: '白切鸡',   desc: '皮爽肉滑，蘸姜葱蓉吃最见功夫，广东人新年必点菜。',           tag: '粤 · 清鲜', img: 'food1.jpg', emoji: '🍗' },
+      { name: '佛跳墙',   desc: '十八种食材文火慢炖一昼夜，汤色金黄，一口下去全是山珍海味。', tag: '闽 · 厚重', img: 'food2.jpg', emoji: '🫕' },
+      { name: '开水白菜', desc: '川菜里最考验功力的一道清汤菜，开水烫出白菜清甜。',             tag: '川 · 素雅', img: 'food3.jpg', emoji: '🥬' },
+      { name: '叫花鸡',   desc: '荷叶黄泥包着烤四小时，敲开泥巴香气冲头，肉质嫩到脱骨。',       tag: '苏 · 奇绝', img: 'food4.jpg', emoji: '🍖' }
+    ];
+
+    var lmj_g_index = 0;
+    var lmj_g_total = lmj_g_foods.length;
+    var lmj_g_cd_end = 0;      // 冷却结束时间戳
+    var lmj_g_startX = 0, lmj_g_startY = 0, lmj_g_currentX = 0, lmj_g_dragging = false;
+    var lmj_g_toastTimer = null;
+
+    // 函数功能：初始化卡片、圆点
+    function lmj_g_init() {
+      lmj_g_foods.forEach(function (f) {
+        var c = document.createElement('div');
+        c.className = 'lmj_g-card';
+        c.innerHTML =
+          '<img src="' + f.img + '" alt="' + f.name + '">' +
+          '<span class="lmj_g-emoji">' + f.emoji + '</span>' +
+          '<span class="lmj_g-tag">' + f.tag + '</span>' +
+          '<h2 class="lmj_g-name">' + f.name + '</h2>' +
+          '<p class="lmj_g-desc">' + f.desc + '</p>';
+        lmj_g_track.appendChild(c);
+        var dot = document.createElement('span');
+        dot.className = 'lmj_g-dot';
+        lmj_g_dots.appendChild(dot);
+      });
+      lmj_g_goTo(0);
+    }
+    // 函数功能：跳转到指定索引
+    function lmj_g_goTo(i) {
+      lmj_g_index = i;
+      lmj_g_track.style.transform = 'translateX(' + (-i * 100) + '%)';
+      lmj_g_num.textContent = i + 1;
+      lmj_g_dots.forEach(function (d, idx) { d.classList.toggle('lmj_on', idx === i); });
+    }
+    // 函数功能：显示边界提示 toast
+    function lmj_g_showToast(msg) {
+      lmj_g_toast.textContent = msg;
+      lmj_g_toast.classList.add('lmj_show');
+      clearTimeout(lmj_g_toastTimer);
+      lmj_g_toastTimer = setTimeout(function () { lmj_g_toast.classList.remove('lmj_show'); }, 1400);
+    }
+    // 函数功能：切换处理 —— 阈值判断 + 冷却 + 边界
+    function lmj_g_finish(endX, endY) {
+      if (Date.now() < lmj_g_cd_end) return;
+      var dx = endX - lmj_g_startX;
+      var dy = endY - lmj_g_startY;
+      if (Math.abs(dx) < 40) return;            // 验收① 阈值 40px
+      if (Math.abs(dx) < Math.abs(dy)) return;  // 纵向更大 → 页面滚动
+
+      if (dx < 0) {
+        if (lmj_g_index >= lmj_g_total - 1) { lmj_g_showToast('已经是最后一张啦 🎉'); return; }
+        lmj_g_goTo(lmj_g_index + 1);
+      } else {
+        if (lmj_g_index <= 0) { lmj_g_showToast('已经是第一张啦 🥢'); return; }
+        lmj_g_goTo(lmj_g_index - 1);
+      }
+      lmj_g_cd_end = Date.now() + 300;          // 验收② 冷却 300ms
+    }
+
+    lmj_g_stage.addEventListener('touchstart', function (e) {
+      lmj_g_startX = e.touches[0].clientX;
+      lmj_g_startY = e.touches[0].clientY;
+      lmj_g_currentX = lmj_g_startX;
+      lmj_g_dragging = true;
+      lmj_g_track.style.transition = 'none';    // 拖动中取消过渡，实现跟手
+    }, { passive: true });
+
+    lmj_g_stage.addEventListener('touchmove', function (e) {
+      if (!lmj_g_dragging) return;
+      lmj_g_currentX = e.touches[0].clientX;
+      var dx = lmj_g_currentX - lmj_g_startX;
+      lmj_g_track.style.transform = 'translateX(calc(' + (-lmj_g_index * 100) + '% + ' + dx + 'px))';
+    }, { passive: true });
+
+    lmj_g_stage.addEventListener('touchend', function (e) {
+      if (!lmj_g_dragging) return;
+      lmj_g_dragging = false;
+      lmj_g_track.style.transition = '';        // 恢复过渡，0.3s 回弹
+      lmj_g_track.style.transform = '';         // 先清除内联 transform（goTo 会设好）
+      lmj_g_finish(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      lmj_g_goTo(lmj_g_index);                  // 重新应用过渡后的位置
+    });
+
+    // 验收③：被系统打断时清理冷却和拖动状态，避免永久卡住
+    lmj_g_stage.addEventListener('touchcancel', function () {
+      lmj_g_cd_end = 0;
+      lmj_g_dragging = false;
+      lmj_g_track.style.transition = '';
+      lmj_g_goTo(lmj_g_index);
+    });
+
+    // 电脑端也能用：鼠标拖动 + 左右按钮
+    var lmj_g_mouseDown = false, lmj_g_mouseUsedTouch = 0;
+    lmj_g_stage.addEventListener('touchstart', function () { lmj_g_mouseUsedTouch = Date.now(); }, { passive: true });
+    lmj_g_stage.addEventListener('mousedown', function (e) {
+      if (Date.now() - lmj_g_mouseUsedTouch < 800) return;
+      lmj_g_mouseDown = true;
+      lmj_g_startX = e.clientX; lmj_g_startY = e.clientY;
+      lmj_g_dragging = true;
+      lmj_g_track.style.transition = 'none';
+    });
+    lmj_g_stage.addEventListener('mousemove', function (e) {
+      if (!lmj_g_mouseDown) return;
+      lmj_g_currentX = e.clientX;
+      var dx = lmj_g_currentX - lmj_g_startX;
+      lmj_g_track.style.transform = 'translateX(calc(' + (-lmj_g_index * 100) + '% + ' + dx + 'px))';
+    });
+    function lmj_g_mouseEnd(e) {
+      if (!lmj_g_mouseDown) return;
+      lmj_g_mouseDown = false; lmj_g_dragging = false;
+      lmj_g_track.style.transition = '';
+      lmj_g_track.style.transform = '';
+      lmj_g_finish(e.clientX, e.clientY);
+      lmj_g_goTo(lmj_g_index);
+    }
+    lmj_g_stage.addEventListener('mouseup', lmj_g_mouseEnd);
+    lmj_g_stage.addEventListener('mouseleave', lmj_g_mouseEnd);
+
+    document.getElementById('lmj_g_prev').addEventListener('click', function () {
+      if (Date.now() < lmj_g_cd_end) return;
+      if (lmj_g_index <= 0) { lmj_g_showToast('已经是第一张啦'); return; }
+      lmj_g_goTo(lmj_g_index - 1); lmj_g_cd_end = Date.now() + 300;
+    });
+    document.getElementById('lmj_g_next').addEventListener('click', function () {
+      if (Date.now() < lmj_g_cd_end) return;
+      if (lmj_g_index >= lmj_g_total - 1) { lmj_g_showToast('已经是最后一张啦'); return; }
+      lmj_g_goTo(lmj_g_index + 1); lmj_g_cd_end = Date.now() + 300;
+    });
+
+    /* ══════════════ 任务三：图片查看器 ══════════════ */
+    var lmj_z_viewer = document.getElementById('lmj_z_viewer');
+    var lmj_z_img = document.getElementById('lmj_z_img');
+    var lmj_z_badge = document.getElementById('lmj_z_badge');
+
+    var lmj_z_scale = 1, lmj_z_tx = 0, lmj_z_ty = 0;
+    var lmj_z_baseW = 0, lmj_z_baseH = 0;
+    // 双指缩放专用 —— 验收①"不跳"的核心：记录两指中点在图片上的原始位置
+    var lmj_z_lastDist = 0, lmj_z_midImgX = 0, lmj_z_midImgY = 0;
+    var lmj_z_dragging = false;
+    var lmj_z_dragStartX = 0, lmj_z_dragStartY = 0;
+    var lmj_z_originTx = 0, lmj_z_originTy = 0;
+    var lmj_z_lastTap = 0, lmj_z_tapStart = null;
+    var lmj_z_usedTouch = 0, lmj_z_mouseDown = false;
+    var lmj_SAVE_KEY = 'lmj_z_state_v4';
+
+    // 函数功能：量出 1x 时图片的显示尺寸（fill 容器宽，高按比例）
+    function lmj_z_measure() {
+      var cw = lmj_z_viewer.clientWidth;
+      if (!cw || !lmj_z_img.naturalWidth) return;
+      lmj_z_baseW = cw;
+      lmj_z_baseH = cw * lmj_z_img.naturalHeight / lmj_z_img.naturalWidth;
+    }
+    // 函数功能：边界收敛 —— 验收②③
+    function lmj_z_clamp() {
+      var cw = lmj_z_viewer.clientWidth;
+      var ch = lmj_z_viewer.clientHeight;
+      if (!cw) return;
+      lmj_z_scale = Math.min(4, Math.max(1, lmj_z_scale));
+      var sw = lmj_z_baseW * lmj_z_scale;
+      var sh = lmj_z_baseH * lmj_z_scale;
+      // 验收③：1x 强制居中
+      if (lmj_z_scale <= 1.01) { lmj_z_scale = 1; lmj_z_tx = 0; lmj_z_ty = 0; return; }
+      // 验收②：边界限制
+      if (sw <= cw) lmj_z_tx = (cw - sw) / 2;
+      else lmj_z_tx = Math.min(0, Math.max(cw - sw, lmj_z_tx));
+      if (sh <= ch) lmj_z_ty = (ch - sh) / 2;
+      else lmj_z_ty = Math.min(0, Math.max(ch - sh, lmj_z_ty));
+    }
+    // 函数功能：写入 transform
+    function lmj_z_apply(anim) {
+      lmj_z_img.classList.toggle('lmj_anim', !!anim);
+      lmj_z_img.style.transform = 'translate(' + lmj_z_tx + 'px,' + lmj_z_ty + 'px) scale(' + lmj_z_scale + ')';
+      lmj_z_badge.textContent = '× ' + lmj_z_scale.toFixed(2);
+    }
+    // 函数功能：缩放到目标值，指定锚点 (mx, my) —— 验收①中点不动公式
+    function lmj_z_zoomTo(target, mx, my, anim) {
+      var ns = Math.min(4, Math.max(1, target));
+      var ratio = ns / lmj_z_scale;
+      // 以 (mx,my) 为锚缩放：锚点在屏幕上的位置不变
+      lmj_z_tx = mx - (mx - lmj_z_tx) * ratio;
+      lmj_z_ty = my - (my - lmj_z_ty) * ratio;
+      lmj_z_scale = ns;
+      lmj_z_clamp(); lmj_z_apply(anim); lmj_z_save();
+    }
+    // 函数功能：保存状态 —— 验收④
+    function lmj_z_save() {
+      try { localStorage.setItem(lmj_SAVE_KEY, JSON.stringify({ s: lmj_z_scale, tx: lmj_z_tx, ty: lmj_z_ty, t: Date.now() })); } catch(e){}
+    }
+    function lmj_z_restore() {
+      try {
+        var raw = localStorage.getItem(lmj_SAVE_KEY);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        if (Date.now() - (o.t || 0) > 600000) return;
+        lmj_z_scale = Math.min(4, Math.max(1, o.s));
+        lmj_z_tx = o.tx || 0; lmj_z_ty = o.ty || 0;
+      } catch(e){}
+    }
+
+    // 图片加载：测量 + 恢复 + 居中
+    lmj_z_img.addEventListener('load', function () {
+      lmj_z_measure(); lmj_z_restore(); lmj_z_clamp(); lmj_z_apply(false);
+    });
+    if (lmj_z_img.complete) { lmj_z_measure(); lmj_z_restore(); lmj_z_clamp(); lmj_z_apply(false); }
+
+    // 旋转屏 / resize：重测量，保留倍数
+    window.addEventListener('resize', function () {
+      var old = lmj_z_scale;
+      lmj_z_measure(); lmj_z_scale = old; lmj_z_clamp(); lmj_z_apply(false); lmj_z_save();
+    });
+
+    // touchstart
+    lmj_z_viewer.addEventListener('touchstart', function (e) {
+      lmj_z_usedTouch = Date.now();
+      if (e.touches.length >= 2) {
+        lmj_z_dragging = false;
+        lmj_z_lastDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        // 验收①核心：记录当前两指中点在图片上的"原始位置"
+        var rect = lmj_z_viewer.getBoundingClientRect();
+        var midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        var midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        lmj_z_midImgX = (midX - lmj_z_tx) / lmj_z_scale;
+        lmj_z_midImgY = (midY - lmj_z_ty) / lmj_z_scale;
+      } else {
+        var t = e.touches[0];
+        lmj_z_dragging = lmj_z_scale > 1;
+        lmj_z_dragStartX = t.clientX; lmj_z_dragStartY = t.clientY;
+        lmj_z_originTx = lmj_z_tx; lmj_z_originTy = lmj_z_ty;
+        lmj_z_tapStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+      }
+    }, { passive: true });
+
+    // touchmove
+    lmj_z_viewer.addEventListener('touchmove', function (e) {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        var d = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (!lmj_z_lastDist) { lmj_z_lastDist = d; return; }
+        var target = Math.min(4, Math.max(1, lmj_z_scale * (d / lmj_z_lastDist)));
+        var ratio = target / lmj_z_scale;
+        var rect = lmj_z_viewer.getBoundingClientRect();
+        var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        var my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        // 验收①公式：中点始终对准图片原始点
+        lmj_z_scale = target;
+        lmj_z_tx = mx - lmj_z_midImgX * lmj_z_scale;
+        lmj_z_ty = my - lmj_z_midImgY * lmj_z_scale;
+        lmj_z_clamp(); lmj_z_apply(false); lmj_z_save();
+      } else if (e.touches.length === 1 && lmj_z_dragging && lmj_z_scale > 1) {
+        e.preventDefault();
+        var t = e.touches[0];
+        lmj_z_tx = lmj_z_originTx + (t.clientX - lmj_z_dragStartX);
+        lmj_z_ty = lmj_z_originTy + (t.clientY - lmj_z_dragStartY);
+        lmj_z_clamp(); lmj_z_apply(false);
+      }
+    }, { passive: false });
+
+    // touchend
+    lmj_z_viewer.addEventListener('touchend', function (e) {
+      if (e.touches.length >= 2) return;
+      lmj_z_lastDist = 0;
+      // 双击判定
+      if (lmj_z_tapStart && e.touches.length === 0) {
+        var t = e.changedTouches[0];
+        var moved = Math.hypot(t.clientX - lmj_z_tapStart.x, t.clientY - lmj_z_tapStart.y);
+        var short = Date.now() - lmj_z_tapStart.time < 250;
+        if (moved < 12 && short) {
+          var now = Date.now();
+          if (now - lmj_z_lastTap < 300) {
+            if (lmj_z_scale > 1) lmj_z_zoomTo(1, lmj_z_viewer.clientWidth/2, lmj_z_viewer.clientHeight/2, true);
+            else {
+              var rect = lmj_z_viewer.getBoundingClientRect();
+              lmj_z_zoomTo(2, lmj_z_tapStart.x - rect.left, lmj_z_tapStart.y - rect.top, true);
+            }
+            lmj_z_lastTap = 0;
+          } else { lmj_z_lastTap = now; }
+        }
+      }
+      lmj_z_tapStart = null;
+      lmj_z_dragging = false;
+      lmj_z_clamp(); lmj_z_apply(true); lmj_z_save();
+    });
+    lmj_z_viewer.addEventListener('touchcancel', function () {
+      lmj_z_dragging = false; lmj_z_lastDist = 0;
+      lmj_z_clamp(); lmj_z_apply(true); lmj_z_save();
+    });
+
+    // 桌面端：滚轮缩放 + pointer 拖动
+    lmj_z_viewer.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var rect = lmj_z_viewer.getBoundingClientRect();
+      var target = lmj_z_scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15);
+      lmj_z_zoomTo(target, e.clientX - rect.left, e.clientY - rect.top, false);
+    }, { passive: false });
+
+    lmj_z_viewer.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') return;
+      if (Date.now() - lmj_z_usedTouch < 800) return;
+      if (lmj_z_scale <= 1) return;
+      lmj_z_mouseDown = true;
+      lmj_z_dragStartX = e.clientX; lmj_z_dragStartY = e.clientY;
+      lmj_z_originTx = lmj_z_tx; lmj_z_originTy = lmj_z_ty;
+      lmj_z_viewer.classList.add('lmj_grabbing'); lmj_z_img.classList.remove('lmj_anim');
+      if (lmj_z_viewer.setPointerCapture) lmj_z_viewer.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    lmj_z_viewer.addEventListener('pointermove', function (e) {
+      if (!lmj_z_mouseDown || e.pointerType === 'touch') return;
+      lmj_z_tx = lmj_z_originTx + (e.clientX - lmj_z_dragStartX);
+      lmj_z_ty = lmj_z_originTy + (e.clientY - lmj_z_dragStartY);
+      lmj_z_clamp(); lmj_z_apply(false); e.preventDefault();
+    });
+    function lmj_z_endDrag() {
+      if (!lmj_z_mouseDown) return;
+      lmj_z_mouseDown = false;
+      lmj_z_viewer.classList.remove('lmj_grabbing');
+      lmj_z_clamp(); lmj_z_apply(true); lmj_z_save();
+    }
+    lmj_z_viewer.addEventListener('pointerup', lmj_z_endDrag);
+    lmj_z_viewer.addEventListener('pointercancel', lmj_z_endDrag);
+    window.addEventListener('blur', lmj_z_endDrag);
+
+    lmj_z_viewer.addEventListener('dblclick', function (e) {
+      if (Date.now() - lmj_z_usedTouch < 800) return;
+      var rect = lmj_z_viewer.getBoundingClientRect();
+      if (lmj_z_scale > 1) lmj_z_zoomTo(1, lmj_z_viewer.clientWidth/2, lmj_z_viewer.clientHeight/2, true);
+      else lmj_z_zoomTo(2, e.clientX - rect.left, e.clientY - rect.top, true);
+    });
+
+    document.getElementById('lmj_z_in').addEventListener('click',  function () { lmj_z_zoomTo(lmj_z_scale * 1.4,  lmj_z_viewer.clientWidth/2, lmj_z_viewer.clientHeight/2, true); });
+    document.getElementById('lmj_z_out').addEventListener('click', function () { lmj_z_zoomTo(lmj_z_scale / 1.4,  lmj_z_viewer.clientWidth/2, lmj_z_viewer.clientHeight/2, true); });
+    document.getElementById('lmj_z_reset').addEventListener('click', function () { lmj_z_zoomTo(1, lmj_z_viewer.clientWidth/2, lmj_z_viewer.clientHeight/2, true); });
+
+    /* ══════════════ 任务四：摇一摇 + 倾斜视差 ══════════════ */
+    var lmj_t_scene = document.getElementById('lmj_t_scene');
+    var lmj_t_layers = lmj_t_scene.querySelectorAll('[data-depth]');
+    var lmj_t_badge = document.getElementById('lmj_t_badge');
+    var lmj_t_status = document.getElementById('lmj_t_status');
+    var lmj_t_auth = document.getElementById('lmj_t_auth');
+    var lmj_t_meta = document.getElementById('lmj_s_meta');
+    var lmj_s_screen = document.getElementById('lmj_s_screen');
+    var lmj_s_emoji = document.getElementById('lmj_s_emoji');
+    var lmj_s_dish = document.getElementById('lmj_s_dish');
+    var lmj_s_draw = document.getElementById('lmj_s_draw');
+
+    var lmj_t_baseGamma = 0, lmj_t_baseBeta = 0, lmj_t_gotOrient = false;
+    var lmj_s_ready = false, lmj_s_permAsked = false, lmj_s_lastShake = 0;
+    var lmj_s_dishes = [
+      { emoji: '🍜', name: '兰州牛肉面', meta: '一清二白三红四绿五黄' },
+      { emoji: '🥟', name: '韭菜猪肉饺', meta: '皮薄馅大 · 蘸醋最幸福' },
+      { emoji: '🍲', name: '番茄牛腩煲', meta: '炖足两小时 · 汤汁拌饭两碗' },
+      { emoji: '🍚', name: '扬州炒饭', meta: '粒粒分明 · 虾仁火腿青豆' },
+      { emoji: '🍗', name: '可乐鸡翅', meta: '零失败家常菜 · 收汁发亮' },
+      { emoji: '🥘', name: '麻婆豆腐', meta: '麻辣鲜香酥 · 一勺盖米饭' },
+      { emoji: '🍤', name: '蒜蓉粉丝虾', meta: '蒸 8 分钟 · 蒜香被粉丝吸走' },
+      { emoji: '🍥', name: '三鲜馄饨', meta: '皮滑汤鲜 · 撒紫菜和虾皮' }
+    ];
+
+    // 函数功能：按倾斜角度 + depth 做 translate3d 视差位移
+    function lmj_t_apply(gamma, beta) {
+      var rx = Math.max(-1, Math.min(1, gamma / 30));
+      var ry = Math.max(-1, Math.min(1, beta / 30));
+      lmj_t_layers.forEach(function (el) {
+        var depth = parseFloat(el.dataset.depth) || 0;
+        el.style.transform = 'translate3d(' + (rx * depth).toFixed(1) + 'px,' + (ry * depth * 0.6).toFixed(1) + 'px,0)';
+      });
+      lmj_t_badge.textContent = 'γ ' + gamma.toFixed(1) + '° · β ' + beta.toFixed(1) + '°';
+    }
+    // 函数功能：抽一道菜 + 弹出动画
+    function lmj_s_drawDish() {
+      var d = lmj_s_dishes[Math.floor(Math.random() * lmj_s_dishes.length)];
+      lmj_s_emoji.textContent = d.emoji;
+      lmj_s_dish.textContent = d.name;
+      lmj_t_meta.textContent = d.meta;
+      lmj_s_screen.classList.remove('lmj_pop');
+      void lmj_s_screen.offsetWidth;
+      lmj_s_screen.classList.add('lmj_pop');
+    }
+    // 函数功能：摇一摇触发 —— 验收① 1.5s 冷却
+    function lmj_s_trigger() {
+      var now = Date.now();
+      if (now - lmj_s_lastShake < 1500) return;
+      lmj_s_lastShake = now;
+      lmj_s_drawDish();
+    }
+    // 函数功能：传感器就绪提示
+    function lmj_s_readyMsg(msg) {
+      if (lmj_s_ready) return;
+      lmj_s_ready = true;
+      lmj_t_status.classList.remove('lmj_warn');
+      lmj_t_status.textContent = msg;
+      lmj_t_auth.style.display = 'none';
+    }
+    // 函数功能：验收② 降级提示
+    function lmj_s_fallback(msg) {
+      lmj_t_status.classList.add('lmj_warn');
+      lmj_t_status.textContent = msg + ' —— 点「🎲 点我抽一次」，鼠标在画面上移动看视差';
+      lmj_t_scene.style.cursor = 'ew-resize';
+    }
+
+    // 函数功能：加速度回调 —— 验收④ accelerationIncludingGravity 合成
+    function lmj_s_onMotion(e) {
+      var a = e.accelerationIncludingGravity;
+      if (!a || a.x === null) return;
+      lmj_s_readyMsg('✅ 传感器就绪 · 摇一摇抽菜，左右倾斜看视差');
+      var g = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0));
+      if (g > 18) lmj_s_trigger();
+    }
+    // 函数功能：方向回调 —— 视差零点初始化
+    function lmj_t_onOrient(e) {
+      if (e.gamma === null) return;
+      if (!lmj_t_gotOrient) {
+        lmj_t_gotOrient = true;
+        lmj_t_baseGamma = e.gamma;
+        lmj_t_baseBeta = e.beta || 0;
+        lmj_s_readyMsg('✅ 传感器就绪 · 当前角度设为 0°，摇一摇/倾斜即可');
+      }
+      lmj_t_apply(e.gamma - lmj_t_baseGamma, (e.beta || 0) - lmj_t_baseBeta);
+    }
+    // 函数功能：验收②降级 —— 鼠标位置模拟倾斜
+    function lmj_t_mouseSim(e) {
+      if (lmj_t_gotOrient) return;
+      var rect = lmj_t_scene.getBoundingClientRect();
+      var rx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      var ry = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+      lmj_t_apply(rx * 30, ry * 30);
+    }
+
+    // 函数功能：初始化传感器监听
+    function lmj_s_start() {
+      var hasMotion = !!window.DeviceMotionEvent;
+      var hasOrient = !!window.DeviceOrientationEvent;
+      if (!hasMotion && !hasOrient) { lmj_s_fallback('当前设备不支持传感器'); return; }
+      var needPerm =
+        (hasMotion && typeof DeviceMotionEvent.requestPermission === 'function') ||
+        (hasOrient && typeof DeviceOrientationEvent.requestPermission === 'function');
+      if (needPerm && !lmj_s_permAsked) {
+        lmj_t_auth.style.display = 'inline-block';
+        lmj_t_status.textContent = '🔐 iOS 设备需授权后才能使用摇一摇与倾斜视差';
+        return;
+      }
+      if (hasMotion)  window.addEventListener('devicemotion', lmj_s_onMotion, { passive: true });
+      if (hasOrient)  window.addEventListener('deviceorientation', lmj_t_onOrient);
+      setTimeout(function () { if (!lmj_s_ready) lmj_s_fallback('⚠️ 未收到传感器数据'); }, 2500);
+    }
+
+    // 验收③ iOS 授权按钮
+    lmj_t_auth.addEventListener('click', function () {
+      lmj_s_permAsked = true;
+      var tasks = [];
+      if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function')
+        tasks.push(DeviceMotionEvent.requestPermission().catch(function () { return 'denied'; }));
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function')
+        tasks.push(DeviceOrientationEvent.requestPermission().catch(function () { return 'denied'; }));
+      Promise.all(tasks).then(function (res) {
+        if (res.indexOf('granted') === -1) { lmj_s_fallback('权限被拒绝，传感器不可用'); return; }
+        lmj_t_auth.style.display = 'none';
+        lmj_s_start();
+      });
+    });
+
+    lmj_s_draw.addEventListener('click', function () {
+      lmj_s_lastShake = 0;
+      lmj_s_drawDish();
+    });
+    lmj_t_scene.addEventListener('mousemove', lmj_t_mouseSim);
+
+    lmj_g_init();
+    lmj_s_start();
+  </script>
+</body>
+</html>
