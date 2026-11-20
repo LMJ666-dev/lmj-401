@@ -248,6 +248,22 @@
     .lmj_s-status.lmj_warn { color: #ffd166; }
     .lmj_s-meta { font-size: 12px; color: #78829a; margin-top: 10px; text-align: center; }
 
+    /* ===== 摇一摇实录视频 ===== */
+    .lmj_video-box {
+      max-width: 420px; margin: 14px auto 0;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px; padding: 10px;
+    }
+    .lmj_video-title {
+      font-size: 12px; color: #9aa4bb; letter-spacing: 1px;
+      margin: 0 0 8px 2px;
+    }
+    .lmj_video {
+      display: block; width: 100%; border-radius: 10px;
+      background: #000; outline: none;
+    }
+
     /* ===== 摇一摇实时诊断面板 ===== */
     .lmj_diag {
       max-width: 420px; margin: 12px auto 0;
@@ -384,6 +400,12 @@
     </div>
 
     <div class="lmj_s-status" id="lmj_t_status">正在等待传感器数据…</div>
+
+    <!-- 摇一摇效果实录视频 -->
+    <div class="lmj_video-box">
+      <div class="lmj_video-title">📹 摇一摇效果实录</div>
+      <video class="lmj_video" src="lmj_shake_demo.mp4" controls playsinline preload="metadata" poster="lmj_space_bg.jpg"></video>
+    </div>
 
     <!-- 实时诊断面板：让用户看清传感器到底有没有在工作 -->
     <div class="lmj_diag" id="lmj_diag">
